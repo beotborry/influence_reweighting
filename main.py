@@ -86,8 +86,8 @@ def main():
     max_tradeoff_acc = 0
     max_tradeoff_fairness_metric = 0
 
-    naive_acc = 85.79
-    naive_vio = 5.2
+    naive_acc = 85.82
+    naive_vio = 17.61
 
     skip = False
 
@@ -156,11 +156,11 @@ def main():
             max_tradeoff_acc = accuracy * 100
             max_tradeoff_fairness_metric = fairness_metric * 100
 
-    log = open(str(dataset) + ' ' + str(method) + ".txt", 'a', encoding="UTF8")
+    log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + ".txt", 'a', encoding="UTF8")
     if str(method) == "reweighting":
-        log.write("eta: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {} \n".format(eta, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
+        log.write("eta: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {:4f} \n".format(eta, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
     elif str(method) == "influence":
-        log.write("scale factor: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {} \n".format(scale_factor, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
+        log.write("scale factor: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {:4f} \n".format(scale_factor, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
     log.close()
 
     if method == 'naive':
