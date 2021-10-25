@@ -1,0 +1,11 @@
+scale factor: 5.0, Acc: 68.32, Fairness Metric: 12.81, Tradeoff: 4.8970 
+scale factor: 10.0, Acc: 67.98, Fairness Metric: 9.40, Tradeoff: 7.3774 
+scale factor: 15.0, Acc: 68.56, Fairness Metric: 9.61, Tradeoff: 35.2914 
+scale factor: 20.0, Acc: 68.13, Fairness Metric: 8.28, Tradeoff: 11.1739 
+scale factor: 25.0, Acc: 68.32, Fairness Metric: 8.76, Tradeoff: 15.5093 
+scale factor: 30.0, Acc: 68.46, Fairness Metric: 11.35, Tradeoff: 13.9627 
+scale factor: 35.0, Acc: 68.56, Fairness Metric: 12.80, Tradeoff: 13.1235 
+scale factor: 40.0, Acc: 68.60, Fairness Metric: 11.72, Tradeoff: 30.9008 
+scale factor: 45.0, Acc: 68.70, Fairness Metric: 11.43, Tradeoff: 5259.0273 
+scale factor: 50.0, Acc: 65.94, Fairness Metric: 8.76, Tradeoff: 2.1431 
+scale factor: 55.0, Acc: 54.84, Fairness Metric: 0.45, Tradeoff: 1.0267 

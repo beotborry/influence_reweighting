@@ -43,7 +43,7 @@ features = [
     u'duration_2.0', u'duration_3.0', u'duration_4.0'
 ]
 LABEL_COLUMN = ["y_yes"]
-protected_features = ['marital_single', 'marital_married']
+protected_features = ['default_yes', 'default_no']
 
 
 def get_bank_data():
@@ -106,5 +106,15 @@ def get_data():
     protected_test_bank = [X_test_bank[g] for g in protected_features]
     X_train_bank = np.array(X_train_bank[features])
     X_test_bank = np.array(X_test_bank[features])
+
+    divorced_train_idx = np.where(np.logical_and(protected_train_bank[0] == 0, protected_train_bank[1] == 0))[0]
+    divorced_test_idx = np.where(np.logical_and(protected_test_bank[0] == 0, protected_test_bank[1] == 0))[0]
+
+    X_train_bank = np.delete(X_train_bank, divorced_train_idx, axis=0)
+    X_test_bank = np.delete(X_test_bank, divorced_test_idx, axis=0)
+    y_train_bank = np.delete(y_train_bank, divorced_train_idx, axis=0)
+    y_test_bank = np.delete(y_test_bank, divorced_test_idx, axis=0)
+    protected_train_bank = list(np.delete(np.array(protected_train_bank), divorced_train_idx, axis=1))
+    protected_test_bank = list(np.delete(np.array(protected_test_bank), divorced_test_idx, axis=1))
 
     return X_train_bank, y_train_bank, X_test_bank, y_test_bank, protected_train_bank, protected_test_bank

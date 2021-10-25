@@ -34,6 +34,7 @@ def main():
         from compas_dataloader import get_data
 
     X_train, y_train, X_test, y_test, protected_train, protected_test = get_data()
+    print(X_train.shape, X_test.shape)
 
     X_groups_train, y_groups_train = split_dataset(X_train, y_train, protected_train)
     X_groups_test, y_groups_test = split_dataset(X_test, y_test, protected_test)
@@ -86,8 +87,8 @@ def main():
     max_tradeoff_acc = 0
     max_tradeoff_fairness_metric = 0
 
-    naive_acc = 85.82
-    naive_vio = 17.61
+    naive_acc = 68.7
+    naive_vio = 14.68
 
     skip = False
 
@@ -158,9 +159,9 @@ def main():
 
     log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + ".txt", 'a', encoding="UTF8")
     if str(method) == "reweighting":
-        log.write("eta: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {:4f} \n".format(eta, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
+        log.write("eta: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(eta, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
     elif str(method) == "influence":
-        log.write("scale factor: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {:4f} \n".format(scale_factor, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
+        log.write("scale factor: {}, Acc: {:.2f}, Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(scale_factor, max_tradeoff_acc, max_tradeoff_fairness_metric, max_tradeoff))
     log.close()
 
     if method == 'naive':
