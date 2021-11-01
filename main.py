@@ -14,6 +14,7 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import os
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 def main():
     args = get_args()
@@ -36,6 +37,15 @@ def main():
     X_train, y_train, X_test, y_test, protected_train, protected_test = get_data()
     print(X_train.shape, X_test.shape)
 
+    if method == "naive_leave_k_out":
+        k = args.k
+        top_k_idx = np.load("./naive_" + str(dataset) + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx.npy")
+        X_train = np.delete(X_train, top_k_idx, axis=0)
+        y_train = np.delete(y_train, top_k_idx, axis=0)
+        protected_train[0] = np.delete(protected_train[0], top_k_idx, axis=0)
+        protected_train[1] = np.delete(protected_train[1], top_k_idx, axis=0)
+        print(X_train.shape)
+
     X_groups_train, y_groups_train = split_dataset(X_train, y_train, protected_train)
     X_groups_test, y_groups_test = split_dataset(X_test, y_test, protected_test)
 
@@ -45,6 +55,8 @@ def main():
     y_test = torch.LongTensor(y_test)
 
     batch_size = 128
+
+
 
     train_dataset = CustomDataset(X_train, y_train)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
@@ -87,8 +99,8 @@ def main():
     max_tradeoff_acc = 0
     max_tradeoff_fairness_metric = 0
 
-    naive_acc = 68.7
-    naive_vio = 14.68
+    naive_acc = 85.82
+    naive_vio = 17.61
 
     skip = False
 
@@ -165,37 +177,63 @@ def main():
     log.close()
 
     if method == 'naive':
+        # r = 10
+        # t = 1000
+        # random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+        # train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
+        # influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_train, X_groups_train, y_groups_train,
+        #                                                    model, train_sampler, weights, gpu=gpu, constraint=fairness_constraint, r=r,
+        #                                                    recursion_depth=t, scale=500.0))
+        # pos_idx = np.where(influence_scores > 0)[0]
+        # neg_idx = np.where(influence_scores < 0)[0]
+        #
+        # print(pos_idx, neg_idx)
+        # np.save("./naive_pos_idx", pos_idx)
+        # np.save("./naive_neg_idx", neg_idx)
+
+        # weights = torch.ones(len(X_train))
+        r = 10
+        t = 1000
+        random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+        train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
         influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_train, X_groups_train, y_groups_train,
-                                                            model, train_loader, gpu=gpu, constraint=fairness_constraint))
+                                   model, train_sampler, weights, gpu=gpu, constraint=fairness_constraint, r=r,
+                                   recursion_depth=t, scale=500.0))
 
-        k = 100
 
-        pos_idx = np.where(influence_scores > np.median(influence_scores))
-        #largest_idx = np.argpartition(influence_scores, -k)[-k:]
-        #smallest_idx = np.argpartition(influence_scores, k)[:k]
+        for k in range(100, 1100, 100):
+            largest_idx = np.argpartition(influence_scores, -k)[-k:]
+            np.save("./naive_" + str(dataset)  + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
+        pass
 
-        #pos_idx = np.where(influence_scores > 0)[0]
-        #neg_idx = np.where(influence_scores < 0)[0]
-
-        tsne_model = TSNE(n_components=2, perplexity=30, learning_rate=200)
-
-        transformed = tsne_model.fit_transform(X_train)
-
-        transformed_largest = transformed[largest_idx]
-        transformed_smallest = transformed[smallest_idx]
-
-        #transformed_pos = transformed[pos_idx]
-        #transformed_neg = transformed[neg_idx]
-
-        xs = np.concatenate((transformed_largest[:, 0], transformed_smallest[:, 0]), axis=0)
-        ys = np.concatenate((transformed_largest[:, 1], transformed_smallest[:, 1]), axis=0)
-        #xs = transformed[:, 0]
-        #ys = transformed[:, 1]
-
-        is_harmful = np.concatenate((np.ones(k), np.zeros(k)), axis=0)
-        #is_harmful = np.concatenate((np.ones(len(transformed_pos)), np.zeros(len(transformed_neg))))
-        plt.scatter(xs, ys, c=is_harmful)
-        plt.show()
+        # smallest_idx = np.argpartition(influence_scores, k)[:k]
+        #
+        # #pos_idx = np.where(influence_scores > 0)[0]
+        # #neg_idx = np.where(influence_scores < 0)[0]
+        #
+        # #tsne_model = TSNE(n_components=2, perplexity=30, learning_rate=200)
+        # #transformed = tsne_model.fit_transform(X_train)
+        #
+        # lda_model = LinearDiscriminantAnalysis(n_components=2)
+        # lda_model.fit(X_train, y_train)
+        #
+        # transformed = lda_model(X_train)
+        #
+        # transformed_largest = transformed[largest_idx]
+        # transformed_smallest = transformed[smallest_idx]
+        #
+        # #transformed_pos = transformed[pos_idx]
+        # #transformed_neg = transformed[neg_idx]
+        #
+        # xs = np.concatenate((transformed_largest[:, 0], transformed_smallest[:, 0]), axis=0)
+        # ys = np.concatenate((transformed_largest[:, 1], transformed_smallest[:, 1]), axis=0)
+        # #xs = transformed[:, 0]
+        # #ys = transformed[:, 1]
+        #
+        # is_harmful = np.concatenate((np.ones(k), np.zeros(k)), axis=0)
+        # #is_harmful = np.concatenate((np.ones(len(transformed_pos)), np.zeros(len(transformed_neg))))
+        # plt.scatter(xs, ys, c=is_harmful)
+        # plt.show()
 
 if __name__ == '__main__':
     main()
