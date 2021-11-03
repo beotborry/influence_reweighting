@@ -183,12 +183,12 @@ def main():
             model.train()
             i = 0
             for z, t, idx in train_loader:
-                if gpu >= 0: z, t, model = z.cuda(), t.cuda(), model.cuda()
+                if torch.cuda.is_available(): z, t, model = z.cuda(), t.cuda(), model.cuda()
                 model.train()
                 y_pred = model(z)
 
                 weight = weights[i * batch_size: (i + 1) * batch_size] if (i + 1) * batch_size <= len(X_train) else weights[i * batch_size:]
-                if gpu >= 0: weight = weight.cuda()
+                if torch.cuda.is_available(): weight = weight.cuda()
 
                 loss = torch.mean(weight * criterion(y_pred, t))
                 optimizer.zero_grad()
@@ -203,7 +203,9 @@ def main():
 
         model.eval()
         with torch.no_grad():
-            if gpu >= 0: X_test, y_test = X_test.cuda(), y_test.cuda()
+            if torch.cuda.is_available():
+                X_test, y_test = X_test.cuda(), y_test.cuda()
+                X_train, y_train = X_train.cuda(), y_train.cuda()
             test_accuracy = sum(model(X_test).argmax(dim=1) == y_test) / float(len(y_test))
             trng_accuracy = sum(model(X_train).argmax(dim=1) == y_train) / float(len(y_train))
 
