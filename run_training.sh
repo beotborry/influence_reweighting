@@ -1,3 +1,3 @@
 #!/bin/zsh
 
-python main.py --method naive --dataset compas --epoch 20 --iteration 15 --constraint eopp
+python main.py --method reweighting --dataset compas --epoch 20 --iteration 15 --constraint eopp --eta 1

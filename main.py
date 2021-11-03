@@ -197,7 +197,8 @@ def main():
                 i += 1
 
         if method == 'reweighting':
-            y_pred_train = model(X_train).argmax(dim=1).detach().numpy()
+            if torch.cuda.is_available(): model, X_train = model.cuda(), X_train.cuda()
+            y_pred_train = model(X_train).argmax(dim=1).detach().cpu().numpy()
             _, violations = get_error_and_violations(fairness_constraint, y_pred_train, y_train, protected_train)
             multipliers += eta * np.array(violations)
 
