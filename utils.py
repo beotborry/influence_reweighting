@@ -123,6 +123,7 @@ def calc_fairness_metric(constraint, z_groups, t_groups, model):
     return fairness metric value for each fairness constraint with two groups(binary case)
     '''
     model.eval()
+    if torch.cuda.is_available(): z_groups, t_groups, model = z_groups.cuda(), t_groups.cuda(), model.cuda()
 
     confusion_matrix_groups = []
 
