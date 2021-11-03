@@ -68,6 +68,7 @@ def calc_loss_diff(constraint, z_groups, t_groups, idxs, model):
         losses = torch.zeros(len(z_groups))
         i = 0
         for z_group, t_group, idx in zip(z_groups, t_groups, idxs):
+            if torch.cuda.is_available(): model, z_group, t_group = model.cuda(), z_group.cuda(), t_group.cuda()
             losses[i] = nn.CrossEntropyLoss()(model(z_group[idx]), t_group[idx])
             i += 1
         return abs(losses[0] - losses[1])
@@ -75,6 +76,7 @@ def calc_loss_diff(constraint, z_groups, t_groups, idxs, model):
     elif constraint == 'eo':
         losses = []
         for z_group, t_group, idx in zip(z_groups, t_groups, idxs):
+            if torch.cuda.is_available(): model, z_group, t_group = model.cuda(), z_group.cuda(), t_group.cuda()
             loss_0 = nn.CrossEntropyLoss()(model(z_group[idx[0]]), t_group[idx[0]])
             loss_1 = nn.CrossEntropyLoss()(model(z_group[idx[1]]), t_group[idx[1]])
             losses.append(loss_0)
@@ -85,6 +87,7 @@ def calc_loss_diff(constraint, z_groups, t_groups, idxs, model):
         # matching y=1 prediction rate
         pred_rates = [] # group_0, group_1
         for z_group in z_groups:
+            if torch.cuda.is_available(): model, z_group = model.cuda(), z_group.cuda()
             y_pred = model(z_group)
             y_pred = gumbel_softmax(y_pred, 1.0, hard=True)
             count_1 = sum(y_pred)[1]

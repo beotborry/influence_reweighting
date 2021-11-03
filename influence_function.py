@@ -22,8 +22,8 @@ def grad_z(z, t, model, gpu=-1):
     if t.dim() != 1: t = t.view(1)
 
     model.eval()
-    if gpu >= 0:
-        z, t = z.cuda(), t.cuda()
+    if torch.cuda.is_available():
+        z, t, model = z.cuda(), t.cuda(), model.cuda()
     y = model(z)
     if y.dim() == 1: y = y.view(1, 2)
 
