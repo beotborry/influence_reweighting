@@ -41,7 +41,7 @@ def s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recur
     h_estimate = v.copy()
     for x, t, idx in z_loader:
         if torch.cuda.is_available():
-            x, t, model = x.cuda(), t.cuda(), model.cuda()
+            x, t, model, weights = x.cuda(), t.cuda(), model.cuda(), weights.cuda()
         y = model(x)
         #y = F.softmax(y, dim=0)
 
