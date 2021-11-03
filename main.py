@@ -143,7 +143,7 @@ def main():
             weights = exp_normalize(weights, scale_factor)
 
         elif method == 'reweighting' and _iter >= 2:
-            weights = torch.tensor(debias_weights(fairness_constraint, y_train, protected_train, multipliers))
+            weights = torch.tensor(debias_weights(fairness_constraint, y_train.cpu(), protected_train, multipliers))
 
         elif method == 'leave_k_out_fine_tuning':
             if _iter % args.term == 0:
