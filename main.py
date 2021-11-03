@@ -19,12 +19,13 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 def main():
     GPU_NUM = 3
     device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
-    torch.cuda.set_device(device)
+    if torch.cuda.is_available(): torch.cuda.set_device(device)
 
     print(device)
     args = get_args()
 
-    set_seed(777)
+    seed = args.seed
+    set_seed(seed)
 
     dataset = args.dataset
     fairness_constraint = args.constraint
@@ -118,8 +119,8 @@ def main():
     max_tradeoff_trng_acc = 0
     max_tradeoff_trng_fairness_metric = 0
 
-    naive_acc = 69.32
-    naive_vio = 26.81
+    naive_acc = args.naive_acc
+    naive_vio = args.naive_vio
 
     top_k_idx = np.array([])
 
@@ -232,9 +233,9 @@ def main():
 
     log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + ".txt", 'a', encoding="UTF8")
     if str(method) == "reweighting":
-        log.write("eta: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(eta, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
+        log.write("seed: {}, eta: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(seed, eta, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
     elif str(method) == "influence":
-        log.write("scaler: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(scale_factor, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
+        log.write("seed: {}, scaler: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(seed, scale_factor, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
     log.close()
 
     if method == 'naive':

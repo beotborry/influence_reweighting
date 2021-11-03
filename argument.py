@@ -13,6 +13,9 @@ def get_args():
     parser.add_argument('--term', default=1, type=int)
     parser.add_argument('--r', default = 1, type=int)
     parser.add_argument('--t', default=5000, type=int)
+    parser.add_argument('--naive_acc', default=100, type=float)
+    parser.add_argument('--naive_vio', default=100, type=float)
+    parser.add_argument('--seed', default=777, type=int)
 
     args = parser.parse_args()
     if args.method == 'influence' and args.scaler is None:
