@@ -17,6 +17,10 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 def main():
+    GPU_NUM = 3
+    device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
+    torch.cuda.set_device(device)
+
     args = get_args()
 
     set_seed(777)
