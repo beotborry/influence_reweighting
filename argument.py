@@ -11,6 +11,8 @@ def get_args():
     parser.add_argument('--eta', default=None, type=float)
     parser.add_argument('--k', default=0, type=int)
     parser.add_argument('--term', default=1, type=int)
+    parser.add_argument('--r', default = 1, type=int)
+    parser.add_argument('--t', default=5000, type=int)
 
     args = parser.parse_args()
     if args.method == 'influence' and args.scaler is None:

@@ -128,8 +128,8 @@ def main():
         print("Iteration: {}".format(_iter))
         if _iter == 1 or method == 'naive': weights = torch.ones(len(X_train))
         elif method == 'influence' and _iter >= 2:
-            r = 5
-            t = 1000
+            r = args.r
+            t = args.t
             random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
             train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
             start = time()
@@ -147,8 +147,8 @@ def main():
 
         elif method == 'leave_k_out_fine_tuning':
             if _iter % args.term == 0:
-                r = 25
-                t = 1500
+                r = args.r
+                t = args.t
                 k = args.k
                 random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
                 train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
@@ -253,8 +253,8 @@ def main():
         # np.save("./naive_neg_idx", neg_idx)
 
         # weights = torch.ones(len(X_train))
-        r = 20
-        t = 1500
+        r = args.r
+        t = args.t
         random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
         train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
         influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_train, X_groups_train, y_groups_train,
