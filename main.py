@@ -21,6 +21,7 @@ def main():
     device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
     torch.cuda.set_device(device)
 
+    print(device)
     args = get_args()
 
     set_seed(777)
