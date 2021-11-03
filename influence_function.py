@@ -40,8 +40,8 @@ def s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recur
     v = list(grad(violation, params, create_graph=True))
     h_estimate = v.copy()
     for x, t, idx in z_loader:
-        if gpu >= 0:
-            x, t = x.cuda(), t.cuda()
+        if torch.cuda.is_available():
+            x, t, model = x.cuda(), t.cuda(), model.cuda()
         y = model(x)
         #y = F.softmax(y, dim=0)
 
