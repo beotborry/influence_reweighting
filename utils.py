@@ -131,8 +131,8 @@ def calc_fairness_metric(constraint, z_groups, t_groups, model):
         _X = z_groups[g]
         _y = t_groups[g]
         if torch.cuda.is_available(): _X, _y = _X.cuda(), _y.cuda()
-        confusion_mat = confusion_matrix(_y.cpu().detach().numpy(),
-                                         model(_X).argmax(dim=1).cpu().detach().numpy()).ravel()
+        confusion_mat = confusion_matrix(_y.detach(),
+                                         model(_X).argmax(dim=1).detach()).ravel()
         confusion_matrix_groups.append(confusion_mat)
 
     tn_0, fp_0, fn_0, tp_0 = confusion_matrix_groups[0]
