@@ -1,7 +1,0 @@
-scaler: 5.0, Trng Acc: 69.78, Trng Fairness Metric: 4.70, Test Acc: 69.13, Test Fairness Metric: 6.77, Tradeoff: 104.4756 
-scaler: 6.0, Trng Acc: 69.48, Trng Fairness Metric: 1.02, Test Acc: 69.18, Test Fairness Metric: 2.52, Tradeoff: 168.4225 
-scaler: 7.0, Trng Acc: 69.31, Trng Fairness Metric: 1.96, Test Acc: 69.13, Test Fairness Metric: 3.01, Tradeoff: 124.0572 
-scaler: 1.0, Trng Acc: 70.22, Trng Fairness Metric: 16.29, Test Acc: 69.32, Test Fairness Metric: 22.32, Tradeoff: 3526.6387 
-scaler: 2.0, Trng Acc: 70.19, Trng Fairness Metric: 13.36, Test Acc: 69.32, Test Fairness Metric: 17.69, Tradeoff: 7154.0308 
-scaler: 3.0, Trng Acc: 69.56, Trng Fairness Metric: 17.36, Test Acc: 69.27, Test Fairness Metric: 21.46, Tradeoff: 109.3190 
-scaler: 4.0, Trng Acc: 69.68, Trng Fairness Metric: 10.10, Test Acc: 69.27, Test Fairness Metric: 13.81, Tradeoff: 265.7358 

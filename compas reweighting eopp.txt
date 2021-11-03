@@ -1,6 +1,0 @@
-eta: 1.0, Trng Acc: 69.16, Trng Fairness Metric: 0.15, Test Acc: 68.60, Test Fairness Metric: 1.64, Tradeoff: 35.1536 
-eta: 2.0, Trng Acc: 69.11, Trng Fairness Metric: 0.04, Test Acc: 68.70, Test Fairness Metric: 2.62, Tradeoff: 38.9840 
-eta: 3.0, Trng Acc: 69.16, Trng Fairness Metric: 0.04, Test Acc: 68.56, Test Fairness Metric: 2.25, Tradeoff: 32.1626 
-eta: 4.0, Trng Acc: 69.21, Trng Fairness Metric: 0.34, Test Acc: 68.75, Test Fairness Metric: 1.89, Tradeoff: 43.4991 
-eta: 5.0, Trng Acc: 69.16, Trng Fairness Metric: 0.34, Test Acc: 68.84, Test Fairness Metric: 3.35, Tradeoff: 49.1195 
-eta: 6.0, Trng Acc: 68.38, Trng Fairness Metric: 18.29, Test Acc: 68.37, Test Fairness Metric: 21.60, Tradeoff: 5.4597 
