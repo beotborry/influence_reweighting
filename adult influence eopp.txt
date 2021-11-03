@@ -1,0 +1,4 @@
+scaler: 10.0, Trng Acc: 86.41, Trng Fairness Metric: 2.54, Test Acc: 85.99, Test Fairness Metric: 0.83, Tradeoff: 297.7816 
+scaler: 1.0, Trng Acc: 86.79, Trng Fairness Metric: 5.27, Test Acc: 85.98, Test Fairness Metric: 5.58, Tradeoff: 39.0105 
+scaler: 2.0, Trng Acc: 86.82, Trng Fairness Metric: 2.47, Test Acc: 85.93, Test Fairness Metric: 2.91, Tradeoff: 48.3203 
+scaler: 5.0, Trng Acc: 86.39, Trng Fairness Metric: 2.00, Test Acc: 86.01, Test Fairness Metric: 3.45, Tradeoff: 1923.5261 
