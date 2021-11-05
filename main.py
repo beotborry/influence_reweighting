@@ -242,6 +242,10 @@ def main():
             "seed: {}, k: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(
                 seed, k, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc,
                 max_tradeoff_test_fairness_metric, max_tradeoff))
+    elif str(method) == "naive_leave_bottom_k_out" and _iter == iteration:
+        log.write(
+            "seed: {}, k: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f} \n".format(seed, k, trng_accuracy * 100, train_fairness_metric * 100, test_accuracy * 100, test_fairness_metric * 100)
+        )
     log.close()
 
     if method == 'naive' and args.idx_save == 1:
