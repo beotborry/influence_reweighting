@@ -16,6 +16,7 @@ def get_args():
     parser.add_argument('--naive_acc', default=100, type=float)
     parser.add_argument('--naive_vio', default=100, type=float)
     parser.add_argument('--seed', default=777, type=int)
+    parser.add_argument('--idx_save', default=0, type=int)
 
     args = parser.parse_args()
     if args.method == 'influence' and args.scaler is None:

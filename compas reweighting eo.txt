@@ -1,0 +1,16 @@
+seed: 100, eta: 1.0, Trng Acc: 69.19, Trng Fairness Metric: 7.44, Test Acc: 69.18, Test Fairness Metric: 9.47, Tradeoff: 19.0857 
+seed: 200, eta: 1.0, Trng Acc: 68.99, Trng Fairness Metric: 8.24, Test Acc: 69.18, Test Fairness Metric: 11.34, Tradeoff: 14.7331 
+seed: 300, eta: 1.0, Trng Acc: 69.19, Trng Fairness Metric: 7.87, Test Acc: 69.08, Test Fairness Metric: 9.97, Tradeoff: 11.8018 
+seed: 777, eta: 1.0, Trng Acc: 69.21, Trng Fairness Metric: 7.97, Test Acc: 68.84, Test Fairness Metric: 10.31, Tradeoff: 15.1489 
+seed: 100, eta: 2.0, Trng Acc: 69.16, Trng Fairness Metric: 7.39, Test Acc: 69.13, Test Fairness Metric: 9.45, Tradeoff: 17.2125 
+seed: 200, eta: 2.0, Trng Acc: 68.89, Trng Fairness Metric: 7.91, Test Acc: 69.32, Test Fairness Metric: 10.94, Tradeoff: 22.3227 
+seed: 300, eta: 2.0, Trng Acc: 69.14, Trng Fairness Metric: 7.62, Test Acc: 69.22, Test Fairness Metric: 10.56, Tradeoff: 14.3767 
+seed: 777, eta: 2.0, Trng Acc: 69.16, Trng Fairness Metric: 7.76, Test Acc: 68.75, Test Fairness Metric: 10.43, Tradeoff: 12.4226 
+seed: 100, eta: 3.0, Trng Acc: 69.09, Trng Fairness Metric: 7.51, Test Acc: 69.13, Test Fairness Metric: 10.38, Tradeoff: 15.2436 
+seed: 200, eta: 3.0, Trng Acc: 68.84, Trng Fairness Metric: 8.00, Test Acc: 69.37, Test Fairness Metric: 10.83, Tradeoff: 26.4390 
+seed: 300, eta: 3.0, Trng Acc: 69.33, Trng Fairness Metric: 7.78, Test Acc: 69.37, Test Fairness Metric: 9.97, Tradeoff: 23.7062 
+seed: 777, eta: 3.0, Trng Acc: 68.97, Trng Fairness Metric: 7.69, Test Acc: 68.70, Test Fairness Metric: 9.66, Tradeoff: 12.7166 
+seed: 100, eta: 4.0, Trng Acc: 69.11, Trng Fairness Metric: 8.36, Test Acc: 69.22, Test Fairness Metric: 10.74, Tradeoff: 18.1473 
+seed: 200, eta: 4.0, Trng Acc: 68.79, Trng Fairness Metric: 7.92, Test Acc: 69.37, Test Fairness Metric: 10.63, Tradeoff: 27.1503 
+seed: 300, eta: 4.0, Trng Acc: 69.11, Trng Fairness Metric: 8.15, Test Acc: 69.27, Test Fairness Metric: 9.90, Tradeoff: 17.9192 
+seed: 777, eta: 4.0, Trng Acc: 68.97, Trng Fairness Metric: 7.54, Test Acc: 68.84, Test Fairness Metric: 9.49, Tradeoff: 16.8690 

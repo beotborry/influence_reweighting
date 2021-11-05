@@ -47,7 +47,7 @@ def main():
 
     if method == "naive_leave_k_out":
         k = args.k
-        top_k_idx = np.load("./naive_" + str(dataset) + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx.npy")
+        top_k_idx = np.load("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset) + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx.npy")
         X_train = np.delete(X_train, top_k_idx, axis=0)
         y_train = np.delete(y_train, top_k_idx, axis=0)
 
@@ -56,7 +56,7 @@ def main():
         protected_train[1] = np.delete(protected_train[1], top_k_idx, axis=0)
     elif method == "naive_leave_bottom_k_out":
         k = args.k
-        bottom_k_idx = np.load("./naive_" + str(dataset) + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx.npy")
+        bottom_k_idx = np.load("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset) + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx.npy")
         X_train = np.delete(X_train, bottom_k_idx, axis=0)
         y_train = np.delete(y_train, bottom_k_idx, axis=0)
         print(sum(protected_train[0][bottom_k_idx]), sum(protected_train[1][bottom_k_idx]))
@@ -160,9 +160,10 @@ def main():
                                            recursion_depth=t, scale=500.0))
                 end = time()
                 print("Elapsed time for calculating weights {:.1f}s".format(end - start))
-                top_k_idx = np.append(top_k_idx, np.argpartition(scores, -k)[-k:])
+                top_k_idx = np.append(top_k_idx, np.argpartition(scores, -k)[-k:]).astype(int)
 
                 X_train, y_train, X_test, y_test, protected_train, protected_test = get_data()
+
                 X_train = np.delete(X_train, top_k_idx, axis=0)
                 y_train = np.delete(y_train, top_k_idx, axis=0)
                 protected_train[0] = np.delete(protected_train[0], top_k_idx, axis=0)
@@ -236,9 +237,14 @@ def main():
         log.write("seed: {}, eta: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(seed, eta, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
     elif str(method) == "influence":
         log.write("seed: {}, scaler: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(seed, scale_factor, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
+    elif str(method) == "naive_leave_k_out":
+        log.write(
+            "seed: {}, k: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(
+                seed, k, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc,
+                max_tradeoff_test_fairness_metric, max_tradeoff))
     log.close()
 
-    if method == 'naive':
+    if method == 'naive' and args.idx_save == 1:
         # r = 10
         # t = 1000
         # random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
@@ -266,8 +272,8 @@ def main():
         for k in range(50, 350, 50):
             largest_idx = np.argpartition(influence_scores, -k)[-k:]
             smallest_idx = np.argpartition(influence_scores, k)[:k]
-            np.save("./naive_" + str(dataset)  + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
-            np.save("./naive_" + str(dataset)  + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx", smallest_idx)
+            np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
+            np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx", smallest_idx)
         # pass
         # k = 15000
         # largest_idx = np.argpartition(influence_scores, -k)[-k:]
