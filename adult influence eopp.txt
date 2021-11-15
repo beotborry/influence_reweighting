@@ -1,0 +1,2 @@
+seed: 100, scaler: 7.0, Trng Acc: 86.50, Trng Fairness Metric: 1.07, Test Acc: 85.98, Test Fairness Metric: 2.35, Tradeoff: 304.7016 
+seed: 200, scaler: 7.0, Trng Acc: 86.57, Trng Fairness Metric: 0.29, Test Acc: 86.06, Test Fairness Metric: 1.61, Tradeoff: 662.2575 

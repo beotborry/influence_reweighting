@@ -254,6 +254,7 @@ def get_accuracy(outputs, labels, binary=False, sigmoid_output=False, reduction=
 def gumbel_softmax_sample(logits, tau, eps=1e-20):
     u = torch.rand(logits.shape)
     g = -torch.log(-torch.log(u+eps)+eps)
+    if torch.cuda.is_available(): u, g = u.cuda(), g.cuda()
     x = logits + g
     return F.softmax(x / tau, dim = -1)
 

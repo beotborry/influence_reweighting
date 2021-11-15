@@ -1,0 +1,25 @@
+
+seed: 100, k: 50, Trng Acc: 87.16, Trng Fairness Metric: 16.69, Test Acc: 85.98, Test Fairness Metric: 16.77 
+seed: 200, k: 50, Trng Acc: 87.03, Trng Fairness Metric: 16.47, Test Acc: 85.98, Test Fairness Metric: 16.54 
+seed: 300, k: 50, Trng Acc: 87.06, Trng Fairness Metric: 16.86, Test Acc: 85.93, Test Fairness Metric: 17.03 
+seed: 777, k: 50, Trng Acc: 87.01, Trng Fairness Metric: 15.86, Test Acc: 85.95, Test Fairness Metric: 15.81 
+seed: 100, k: 100, Trng Acc: 87.26, Trng Fairness Metric: 16.09, Test Acc: 86.11, Test Fairness Metric: 16.31 
+seed: 200, k: 100, Trng Acc: 87.13, Trng Fairness Metric: 16.63, Test Acc: 85.97, Test Fairness Metric: 16.55 
+seed: 300, k: 100, Trng Acc: 87.26, Trng Fairness Metric: 16.85, Test Acc: 85.95, Test Fairness Metric: 16.84 
+seed: 777, k: 100, Trng Acc: 87.20, Trng Fairness Metric: 16.30, Test Acc: 85.92, Test Fairness Metric: 16.24 
+seed: 100, k: 150, Trng Acc: 87.43, Trng Fairness Metric: 17.25, Test Acc: 85.87, Test Fairness Metric: 17.57 
+seed: 200, k: 150, Trng Acc: 87.30, Trng Fairness Metric: 17.16, Test Acc: 85.94, Test Fairness Metric: 17.14 
+seed: 300, k: 150, Trng Acc: 87.33, Trng Fairness Metric: 17.14, Test Acc: 85.93, Test Fairness Metric: 17.39 
+seed: 777, k: 150, Trng Acc: 87.43, Trng Fairness Metric: 16.77, Test Acc: 85.65, Test Fairness Metric: 17.00 
+seed: 100, k: 200, Trng Acc: 87.50, Trng Fairness Metric: 15.91, Test Acc: 86.00, Test Fairness Metric: 16.49 
+seed: 200, k: 200, Trng Acc: 87.31, Trng Fairness Metric: 15.85, Test Acc: 86.00, Test Fairness Metric: 16.08 
+seed: 300, k: 200, Trng Acc: 87.46, Trng Fairness Metric: 16.46, Test Acc: 85.91, Test Fairness Metric: 16.86 
+seed: 777, k: 200, Trng Acc: 87.59, Trng Fairness Metric: 15.99, Test Acc: 85.89, Test Fairness Metric: 16.45 
+seed: 100, k: 250, Trng Acc: 87.72, Trng Fairness Metric: 16.88, Test Acc: 85.97, Test Fairness Metric: 17.56 
+seed: 200, k: 250, Trng Acc: 87.51, Trng Fairness Metric: 16.53, Test Acc: 85.97, Test Fairness Metric: 16.96 
+seed: 300, k: 250, Trng Acc: 87.69, Trng Fairness Metric: 16.88, Test Acc: 86.10, Test Fairness Metric: 17.37 
+seed: 777, k: 250, Trng Acc: 87.79, Trng Fairness Metric: 17.20, Test Acc: 85.71, Test Fairness Metric: 17.65 
+seed: 100, k: 300, Trng Acc: 86.76, Trng Fairness Metric: 24.73, Test Acc: 84.73, Test Fairness Metric: 24.81 
+seed: 200, k: 300, Trng Acc: 86.74, Trng Fairness Metric: 24.49, Test Acc: 84.69, Test Fairness Metric: 24.66 
+seed: 300, k: 300, Trng Acc: 86.83, Trng Fairness Metric: 23.99, Test Acc: 84.75, Test Fairness Metric: 24.16 
+seed: 777, k: 300, Trng Acc: 86.52, Trng Fairness Metric: 25.45, Test Acc: 84.40, Test Fairness Metric: 25.45 

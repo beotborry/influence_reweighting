@@ -120,6 +120,7 @@ def calc_influence_dataset(X, y, idxs, z_groups, t_groups, model, z_loader, weig
                             constraint=constraint, weights=weights, scale=scale,
                             r=r, recursion_depth=recursion_depth)
     influences = []
+    torch.cuda.synchronize()
     for z, t in zip(X, y):
-        influences.append(calc_influence(z, t, s_test_vec, model, z_loader, gpu=gpu))
+        influences.append(calc_influence(z, t, s_test_vec, model, z_loader, gpu=gpu).cpu())
     return influences

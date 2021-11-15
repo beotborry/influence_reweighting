@@ -1,0 +1,35 @@
+seed: 100, scaler: 23.0, Trng Acc: 69.85, Trng Fairness Metric: 16.02, Test Acc: 69.80, Test Fairness Metric: 15.81 
+seed: 100, scaler: 23.0, Trng Acc: 68.40, Trng Fairness Metric: 14.08, Test Acc: 69.18, Test Fairness Metric: 15.01, Tradeoff: 18.4642 
+seed: 100, scaler: 22.5, Trng Acc: 69.95, Trng Fairness Metric: 15.50, Test Acc: 69.70, Test Fairness Metric: 16.43 
+seed: 100, scaler: 22.5, Trng Acc: 69.75, Trng Fairness Metric: 10.90, Test Acc: 68.94, Test Fairness Metric: 9.80, Tradeoff: 19.6931 
+seed: 222, scaler: 22.5, Trng Acc: 69.19, Trng Fairness Metric: 13.32, Test Acc: 69.80, Test Fairness Metric: 15.08 
+seed: 222, scaler: 22.5, Trng Acc: 69.41, Trng Fairness Metric: 13.08, Test Acc: 69.99, Test Fairness Metric: 14.62 
+seed: 222, scaler: 22.5, Trng Acc: 69.48, Trng Fairness Metric: 12.78, Test Acc: 69.70, Test Fairness Metric: 13.36 
+seed: 222, scaler: 22.5, Trng Acc: 69.41, Trng Fairness Metric: 13.16, Test Acc: 69.70, Test Fairness Metric: 12.73 
+seed: 222, scaler: 22.5, Trng Acc: 69.43, Trng Fairness Metric: 12.65, Test Acc: 69.70, Test Fairness Metric: 11.28 
+seed: 222, scaler: 22.5, Trng Acc: 69.19, Trng Fairness Metric: 11.14, Test Acc: 69.65, Test Fairness Metric: 8.70 
+seed: 222, scaler: 22.5, Trng Acc: 69.29, Trng Fairness Metric: 9.30, Test Acc: 69.60, Test Fairness Metric: 7.92 
+seed: 222, scaler: 22.5, Trng Acc: 69.11, Trng Fairness Metric: 10.26, Test Acc: 69.51, Test Fairness Metric: 8.79, Tradeoff: 154.8685 
+seed: 100, scaler: 23.0, Trng Acc: 69.85, Trng Fairness Metric: 16.02, Test Acc: 69.80, Test Fairness Metric: 15.81 
+seed: 100, scaler: 23.0, Trng Acc: 68.40, Trng Fairness Metric: 14.08, Test Acc: 69.18, Test Fairness Metric: 15.01, Tradeoff: 18.4642 
+seed: 222, scaler: 23.0, Trng Acc: 69.21, Trng Fairness Metric: 13.41, Test Acc: 69.84, Test Fairness Metric: 15.14 
+seed: 222, scaler: 23.0, Trng Acc: 69.38, Trng Fairness Metric: 13.21, Test Acc: 69.99, Test Fairness Metric: 14.62 
+seed: 222, scaler: 23.0, Trng Acc: 69.43, Trng Fairness Metric: 12.56, Test Acc: 69.70, Test Fairness Metric: 13.36 
+seed: 222, scaler: 23.0, Trng Acc: 69.24, Trng Fairness Metric: 12.54, Test Acc: 69.75, Test Fairness Metric: 12.35 
+seed: 222, scaler: 23.0, Trng Acc: 69.31, Trng Fairness Metric: 11.42, Test Acc: 69.65, Test Fairness Metric: 10.62 
+seed: 222, scaler: 23.0, Trng Acc: 69.11, Trng Fairness Metric: 11.05, Test Acc: 69.60, Test Fairness Metric: 8.64 
+seed: 222, scaler: 23.0, Trng Acc: 69.14, Trng Fairness Metric: 9.94, Test Acc: 69.60, Test Fairness Metric: 8.27 
+seed: 222, scaler: 23.0, Trng Acc: 69.14, Trng Fairness Metric: 14.48, Test Acc: 69.56, Test Fairness Metric: 16.24, Tradeoff: 153.3420 
+seed: 300, scaler: 23.0, Trng Acc: 68.67, Trng Fairness Metric: 14.51, Test Acc: 69.51, Test Fairness Metric: 16.24, Tradeoff: 72.7646 
+seed: 100, scaler: 25.0, Trng Acc: 69.87, Trng Fairness Metric: 15.83, Test Acc: 69.84, Test Fairness Metric: 16.45 
+seed: 100, scaler: 25.0, Trng Acc: 68.52, Trng Fairness Metric: 13.43, Test Acc: 69.18, Test Fairness Metric: 14.34, Tradeoff: 20.0403 
+seed: 222, scaler: 25.0, Trng Acc: 69.04, Trng Fairness Metric: 12.09, Test Acc: 69.70, Test Fairness Metric: 14.96 
+seed: 222, scaler: 25.0, Trng Acc: 69.38, Trng Fairness Metric: 12.36, Test Acc: 69.80, Test Fairness Metric: 13.83 
+seed: 222, scaler: 25.0, Trng Acc: 69.16, Trng Fairness Metric: 11.99, Test Acc: 69.60, Test Fairness Metric: 12.06 
+seed: 222, scaler: 25.0, Trng Acc: 68.89, Trng Fairness Metric: 9.42, Test Acc: 69.51, Test Fairness Metric: 8.01, Tradeoff: 163.5250 
+seed: 300, scaler: 25.0, Trng Acc: 69.90, Trng Fairness Metric: 11.59, Test Acc: 69.27, Test Fairness Metric: 13.11, Tradeoff: 29.5791 
+seed: 777, scaler: 25.0, Trng Acc: 69.21, Trng Fairness Metric: 3.36, Test Acc: 68.94, Test Fairness Metric: 2.05, Tradeoff: 31.3820 
+seed: 250, scaler: 25.0, Trng Acc: 69.38, Trng Fairness Metric: 12.45, Test Acc: 69.13, Test Fairness Metric: 14.00, Tradeoff: 18.7334 
+seed: 2, scaler: 25.0, Trng Acc: 68.60, Trng Fairness Metric: 12.78, Test Acc: 69.13, Test Fairness Metric: 14.93, Tradeoff: 16.7729 
+seed: 0, scaler: 25.0, Trng Acc: 68.87, Trng Fairness Metric: 15.00, Test Acc: 69.51, Test Fairness Metric: 16.04, Tradeoff: 74.9927 
+seed: 222, scaler: 25.0, Trng Acc: 69.04, Trng Fairness Metric: 12.09, Test Acc: 69.70, Test Fairness Metric: 14.96 

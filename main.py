@@ -35,6 +35,7 @@ def main():
     scale_factor = args.scaler
     eta = args.eta
 
+    print(seed)
     if dataset == "adult":
         from adult_dataloader import get_data
     elif dataset == "bank":
@@ -50,7 +51,7 @@ def main():
         top_k_idx = np.load("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset) + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx.npy")
         X_train = np.delete(X_train, top_k_idx, axis=0)
         y_train = np.delete(y_train, top_k_idx, axis=0)
-
+        print(X_train.shape, y_train.shape)
         print(sum(protected_train[0][top_k_idx]), sum(protected_train[1][top_k_idx]))
         protected_train[0] = np.delete(protected_train[0], top_k_idx, axis=0)
         protected_train[1] = np.delete(protected_train[1], top_k_idx, axis=0)
@@ -59,9 +60,18 @@ def main():
         bottom_k_idx = np.load("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset) + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx.npy")
         X_train = np.delete(X_train, bottom_k_idx, axis=0)
         y_train = np.delete(y_train, bottom_k_idx, axis=0)
+        print(X_train.shape)
         print(sum(protected_train[0][bottom_k_idx]), sum(protected_train[1][bottom_k_idx]))
         protected_train[0] = np.delete(protected_train[0], bottom_k_idx, axis=0)
         protected_train[1] = np.delete(protected_train[1], bottom_k_idx, axis=0)
+        print(X_train.shape)
+    elif method == "leave_random_k_out":
+        k = args.k
+        random_k_idx = np.random.randint(0, len(X_train)-1, k)
+        X_train = np.delete(X_train, random_k_idx, axis=0)
+        y_train = np.delete(y_train, random_k_idx, axis=0)
+        protected_train[0] = np.delete(protected_train[0], random_k_idx, axis=0)
+        protected_train[1] = np.delete(protected_train[1], random_k_idx, axis=0)
         print(X_train.shape)
 
     X_groups_train, y_groups_train = split_dataset(X_train, y_train, protected_train)
@@ -191,7 +201,7 @@ def main():
 
                 weight = weights[i * batch_size: (i + 1) * batch_size] if (i + 1) * batch_size <= len(X_train) else weights[i * batch_size:]
                 if torch.cuda.is_available(): weight = weight.cuda()
-
+                if len(y_pred.shape) == 1: y_pred = y_pred.unsqueeze(0)
                 loss = torch.mean(weight * criterion(y_pred, t))
                 optimizer.zero_grad()
                 loss.backward()
@@ -231,8 +241,18 @@ def main():
             max_tradeoff_test_fairness_metric = test_fairness_metric * 100
             max_tradeoff_trng_acc = trng_accuracy * 100
             max_tradeoff_trng_fairness_metric = train_fairness_metric * 100
+        
+        if str(method) == "influence" or str(method) == "reweighting":
+            log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + "_new.txt", 'a', encoding="UTF8")
+            if test_accuracy * 100 >= naive_acc and str(method) == "reweighting":
+                log.write("seed: {}, eta: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f} \n".format(seed, eta, trng_accuracy * 100, train_fairness_metric * 100, test_accuracy * 100, test_fairness_metric * 100))
+            elif test_accuracy * 100 >= naive_acc and str(method) == "influence":
+                log.write("seed: {}, scaler: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f} \n".format(seed, scale_factor, trng_accuracy * 100, train_fairness_metric * 100, test_accuracy * 100, test_fairness_metric * 100))
+            log.close()
+       
 
-    log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + ".txt", 'a', encoding="UTF8")
+    log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + "_new.txt", 'a', encoding="UTF8")
+     
     if str(method) == "reweighting":
         log.write("seed: {}, eta: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(seed, eta, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
     elif str(method) == "influence":
@@ -242,7 +262,7 @@ def main():
             "seed: {}, k: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(
                 seed, k, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc,
                 max_tradeoff_test_fairness_metric, max_tradeoff))
-    elif str(method) == "naive_leave_bottom_k_out" and _iter == iteration:
+    elif str(method) in ["naive_leave_bottom_k_out", "leave_random_k_out"] and _iter == iteration:
         log.write(
             "seed: {}, k: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f} \n".format(seed, k, trng_accuracy * 100, train_fairness_metric * 100, test_accuracy * 100, test_fairness_metric * 100)
         )
@@ -266,18 +286,17 @@ def main():
         # weights = torch.ones(len(X_train))
         r = args.r
         t = args.t
+        k = args.k
         random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
         train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
         influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_train, X_groups_train, y_groups_train,
                                    model, train_sampler, weights, gpu=gpu, constraint=fairness_constraint, r=r,
                                    recursion_depth=t, scale=500.0))
 
-
-        for k in range(50, 350, 50):
-            largest_idx = np.argpartition(influence_scores, -k)[-k:]
-            smallest_idx = np.argpartition(influence_scores, k)[:k]
-            np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
-            np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx", smallest_idx)
+        largest_idx = np.argpartition(influence_scores, -k)[-k:]
+        smallest_idx = np.argpartition(influence_scores, k)[:k]
+        np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
+        np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx", smallest_idx)
         # pass
         # k = 15000
         # largest_idx = np.argpartition(influence_scores, -k)[-k:]

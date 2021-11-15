@@ -1,0 +1,2 @@
+seed: 100, k: 200, Trng Acc: 73.69, Trng Fairness Metric: 1.24, Test Acc: 68.46, Test Fairness Metric: 37.53 
+seed: 100, k: 200, Trng Acc: 73.69, Trng Fairness Metric: 1.24, Test Acc: 68.46, Test Fairness Metric: 37.53 
