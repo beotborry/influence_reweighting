@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+python main.py --method influence --dataset adult --epoch 20 --iteration 15 --constraint eopp --seed 100 --naive_acc 100 --naive_vio 100 --scaler 50 --r 25 --t 1500
+
 for k in 50 100 150 200 250 300
 do
 	python main.py --method leave_random_k_out --dataset adult --epoch 20 --iteration 15 --constraint eopp --seed 100 --k $k

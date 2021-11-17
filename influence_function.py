@@ -3,6 +3,8 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from utils import calc_loss_diff
+import time
+import numpy as np
 
 
 def grad_z(z, t, model, gpu=-1):
@@ -32,6 +34,14 @@ def grad_z(z, t, model, gpu=-1):
     params = [p for p in model.parameters() if p.requires_grad]
     return list(grad(loss, params, create_graph=True))
 
+def grad_z_dataset(X, y, model, gpu=-1):
+    model.eval()
+    grad_zs = []
+    for z, t in zip(X, y):
+        grad_z_vec = grad_z(z, t, model, gpu)
+        grad_zs.append(grad_z_vec)
+    return grad_zs
+        
 def s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recursion_depth=5000, damp=0.01, scale=25.0, gpu=-1):
     model.eval()
     violation = calc_loss_diff(constraint, z_groups, t_groups, idxs, model)
@@ -42,13 +52,8 @@ def s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recur
     for x, t, idx in z_loader:
         if torch.cuda.is_available():
             x, t, model, weights = x.cuda(), t.cuda(), model.cuda(), weights.cuda()
-        y = model(x)
-        #y = F.softmax(y, dim=0)
-
+        y = model(x) 
         loss = weights[idx] * torch.nn.CrossEntropyLoss(reduction='none')(y, t)
-        #loss = weights[idx].detach() * torch.nn.CrossEntropyLoss(reduction='none')(y,t)
-        #loss = torch.nn.functional.cross_entropy(y, t)
-        #loss = weights[idx] * torch.nn.CrossEntropyLoss(reduction='none')(y, t)
         break
     for i in range(recursion_depth):
         hv = hvp(loss[i], params, h_estimate)
@@ -56,6 +61,36 @@ def s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recur
             h_estimate = [
                 _v + (1 - damp) * _h_e - _hv / scale
                 for _v, _h_e, _hv in zip(v, h_estimate, hv)]
+    
+    return h_estimate
+
+def s_test_wrt_loss(z_groups, t_groups, X, y, idxs, model, z_loader, constraint, weights, recursion_depth=5000, damp=0.01, scale=25.0, gpu=-1):
+    model.eval()
+    grad_zs = grad_z_dataset(X, y)
+    params = [p for p in model.parameters() if p.requires_grad]
+    pass
+
+def LISSA_weighted(model, z_loader, weights, recursion_depth=5000, damp=0.01, scale=25.0, gpu=-1):
+    params = [p for p in model.parameters() if p.requires_grad]
+    v = []
+    # Todo: how to implement I?
+    for elem in params:
+        if torch.cuda.is_available(): v.append(torch.ones_like(elem).cuda())
+        else: v.append(torch.ones_like(elem).cuda())
+    h_estimate = v.copy()
+
+    for x, t, idx in z_loader:
+        if torch.cuda.is_available(): x, t, model, weights = x.cuda(), t.cuda(), model.cuda(), weights.cuda()
+        y = model(x)
+        loss = weights[idx] * torch.nn.CrossEntropyLoss(reduction = 'none')(y, t)
+        break
+    for i in range(recursion_depth):
+        hv = hvp(loss[i], params, h_estimate)
+        with torch.no_grad():
+            h_estimate = [
+                _v + (1 - damp) * _h_e - _hv / scale
+                for _v, _h_e, _hv in zip(v, h_estimate, hv)]
+
     return h_estimate
 
 def avg_s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recursion_depth=5000, damp=0.01, scale=25.0, gpu=-1, r=1):
@@ -107,18 +142,21 @@ def hvp(y, w, v):
 
 def calc_influence(z, t, s_test, model, z_loader, gpu = -1):
 
-    s_test_vec = s_test
     grad_z_vec = grad_z(z = z, t = t, model = model, gpu = gpu)
     influence = -sum([
-        torch.sum(k * j).data for k, j in zip(grad_z_vec, s_test_vec)
+        torch.sum(k * j).data for k, j in zip(grad_z_vec, s_test)
     ]) / len(z_loader.dataset)
 
     return influence
 
 def calc_influence_dataset(X, y, idxs, z_groups, t_groups, model, z_loader, weights, gpu, constraint, r=1, recursion_depth=5000, scale=25.0):
+    start = time.time()
     s_test_vec = avg_s_test(z_groups=z_groups, t_groups=t_groups, idxs=idxs, model=model, z_loader=z_loader, gpu=gpu,
                             constraint=constraint, weights=weights, scale=scale,
                             r=r, recursion_depth=recursion_depth)
+    end = time.time()
+
+    print("s_test calc time: {:.2f}".format(end-start))
     influences = []
     torch.cuda.synchronize()
     for z, t in zip(X, y):

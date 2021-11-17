@@ -243,7 +243,7 @@ def main():
             max_tradeoff_trng_fairness_metric = train_fairness_metric * 100
         
         if str(method) == "influence" or str(method) == "reweighting":
-            log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + "_new.txt", 'a', encoding="UTF8")
+            log = open('./log/' + str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + "_new.txt", 'a', encoding="UTF8")
             if test_accuracy * 100 >= naive_acc and str(method) == "reweighting":
                 log.write("seed: {}, eta: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f} \n".format(seed, eta, trng_accuracy * 100, train_fairness_metric * 100, test_accuracy * 100, test_fairness_metric * 100))
             elif test_accuracy * 100 >= naive_acc and str(method) == "influence":
@@ -251,7 +251,7 @@ def main():
             log.close()
        
 
-    log = open(str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + "_new.txt", 'a', encoding="UTF8")
+    log = open('./log/' + str(dataset) + ' ' + str(method) + ' ' + str(fairness_constraint) + "_new.txt", 'a', encoding="UTF8")
      
     if str(method) == "reweighting":
         log.write("seed: {}, eta: {}, Trng Acc: {:.2f}, Trng Fairness Metric: {:.2f}, Test Acc: {:.2f}, Test Fairness Metric: {:.2f}, Tradeoff: {:.4f} \n".format(seed, eta, max_tradeoff_trng_acc, max_tradeoff_trng_fairness_metric, max_tradeoff_test_acc, max_tradeoff_test_fairness_metric, max_tradeoff))
@@ -269,21 +269,6 @@ def main():
     log.close()
 
     if method == 'naive' and args.idx_save == 1:
-        # r = 10
-        # t = 1000
-        # random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
-        # train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
-        # influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_train, X_groups_train, y_groups_train,
-        #                                                    model, train_sampler, weights, gpu=gpu, constraint=fairness_constraint, r=r,
-        #                                                    recursion_depth=t, scale=500.0))
-        # pos_idx = np.where(influence_scores > 0)[0]
-        # neg_idx = np.where(influence_scores < 0)[0]
-        #
-        # print(pos_idx, neg_idx)
-        # np.save("./naive_pos_idx", pos_idx)
-        # np.save("./naive_neg_idx", neg_idx)
-
-        # weights = torch.ones(len(X_train))
         r = args.r
         t = args.t
         k = args.k
@@ -297,39 +282,6 @@ def main():
         smallest_idx = np.argpartition(influence_scores, k)[:k]
         np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
         np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx", smallest_idx)
-        # pass
-        # k = 15000
-        # largest_idx = np.argpartition(influence_scores, -k)[-k:]
-        # smallest_idx = np.argpartition(influence_scores, k)[:k]
-        # np.save("./naive_" + str(dataset) + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
-        # np.save("./naive_" + str(dataset) + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx", smallest_idx)
-        #
-        # #pos_idx = np.where(influence_scores > 0)[0]
-        # #neg_idx = np.where(influence_scores < 0)[0]
-        #
-        # #tsne_model = TSNE(n_components=2, perplexity=30, learning_rate=200)
-        # #transformed = tsne_model.fit_transform(X_train)
-        #
-        # lda_model = LinearDiscriminantAnalysis(n_components=2)
-        # lda_model.fit(X_train, y_train)
-        #
-        # transformed = lda_model(X_train)
-        #
-        # transformed_largest = transformed[largest_idx]
-        # transformed_smallest = transformed[smallest_idx]
-        #
-        # #transformed_pos = transformed[pos_idx]
-        # #transformed_neg = transformed[neg_idx]
-        #
-        # xs = np.concatenate((transformed_largest[:, 0], transformed_smallest[:, 0]), axis=0)
-        # ys = np.concatenate((transformed_largest[:, 1], transformed_smallest[:, 1]), axis=0)
-        # #xs = transformed[:, 0]
-        # #ys = transformed[:, 1]
-        #
-        # is_harmful = np.concatenate((np.ones(k), np.zeros(k)), axis=0)
-        # #is_harmful = np.concatenate((np.ones(len(transformed_pos)), np.zeros(len(transformed_neg))))
-        # plt.scatter(xs, ys, c=is_harmful)
-        # plt.show()
 
 if __name__ == '__main__':
     main()
