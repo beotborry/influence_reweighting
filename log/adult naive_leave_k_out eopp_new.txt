@@ -1,0 +1,1 @@
+seed: 100, k: 250, Trng Acc: 87.56, Trng Fairness Metric: 1.28, Test Acc: 85.75, Test Fairness Metric: 1.08, Tradeoff: 6.9419 

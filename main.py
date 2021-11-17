@@ -283,8 +283,10 @@ def main():
         np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx", largest_idx)
         np.save("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset)  + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx", smallest_idx)
 
+    if args.model_save == 1:
+        if str(method) == "naive_leave_k_out":
+            torch.save(model, "./model/{}_{}_{}_{}_{}".format(str(seed), str(dataset), str(method), str(fairness_constraint), str(k)))
+        print("Model Save Done!")
 if __name__ == '__main__':
     main()
-
-
 
