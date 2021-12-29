@@ -1,4 +1,4 @@
-from dataset_factory import DatasetFactory
+from data_handler.dataset_factory import DatasetFactory
 
 import numpy as np
 from torchvision import transforms
@@ -11,7 +11,7 @@ class DataloaderFactory:
 
     @staticmethod
     def get_dataloader(name, img_size=224, batch_size=256, seed=0, num_workers=4,
-                       target='Smiling', skew_ratio=1., labelwise=False):
+                       target='Smiling', skew_ratio=1., labelwise=False, get_whole=False):
 
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
@@ -56,11 +56,18 @@ class DataloaderFactory:
         num_classes = test_dataset.num_classes
         num_groups = test_dataset.num_groups
 
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+        if get_whole:
+            train_dataloader = DataLoader(train_dataset, batch_size = len(train_dataset), shuffle=False,
                                           num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True,
                                           drop_last=True)
+            test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False,
+                                         num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True,
+                                         drop_last=True)
+        else:
+            train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False,
+                                          num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True)
 
-        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
+            test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
                                      num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True)
 
         print('# of test data : {}'.format(len(test_dataset)))

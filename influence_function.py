@@ -5,6 +5,7 @@ import torch.nn as nn
 from utils import calc_loss_diff
 import time
 import numpy as np
+from torch.autograd.functional import hvp as hvp_torch
 
 
 def grad_z(z, t, model, gpu=-1):
@@ -57,6 +58,7 @@ def s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recur
         break
     for i in range(recursion_depth):
         hv = hvp(loss[i], params, h_estimate)
+        #hv = hvp_torch(loss[i], params, h_estimate)
         with torch.no_grad():
             h_estimate = [
                 _v + (1 - damp) * _h_e - _hv / scale
@@ -135,10 +137,7 @@ def hvp(y, w, v):
         elemwise_products += torch.sum(grad_elem * v_elem)
 
     # Second backprop
-    return_grads = grad(elemwise_products, w, create_graph=True)
-
-
-    return return_grads
+    return grad(elemwise_products, w, retain_graph=True)
 
 def calc_influence(z, t, s_test, model, z_loader, gpu = -1):
 

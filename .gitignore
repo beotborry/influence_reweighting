@@ -1,2 +1,4 @@
 data/utkface_aligned_cropped/
 data_handler/data/
+model/
+data/celeba/

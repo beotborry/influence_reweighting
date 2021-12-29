@@ -1,0 +1,52 @@
+import torch
+import numpy as np
+from sklearn.metrics import confusion_matrix
+from collections import defaultdict
+
+def compute_confusion_matrix(constraint, dataloader, model):
+    model.eval()
+    if torch.cuda.is_available(): model = model.cuda()
+    
+    confu_mat = defaultdict(lambda: np.zeros((2,2)))
+
+    predict_mat = {}
+    output_set = torch.tensor([])
+    group_set = torch.tensor([], dtype=torch.long)
+    target_set = torch.tensor([], dtype=torch.long)
+
+    with torch.no_grad():
+        for i, data in enumerate(dataloader):
+            inputs, _, groups, targets, _ = data
+            labels = targets
+            groups = groups.long()
+
+            if torch.cuda.is_available(): inputs, labels = inputs.cuda(), labels.cuda()
+
+            outputs = model(inputs)
+            
+            group_set = torch.cat((group_set, groups))
+            target_set = torch.cat((target_set, targets))
+            output_set = torch.cat((output_set, outputs.cpu()))
+
+            pred = torch.argmax(outputs, 1)
+            group_element = list(torch.unique(groups).numpy())
+            for i in group_element:
+                mask = groups == i
+                if len(labels[mask]) != 0:
+                    confu_mat[str(i)] += confusion_matrix(
+                        labels[mask].cpu().numpy(), pred[mask].cpu().numpy(),
+                        labels=[i for i in range(2)])
+
+
+    predict_mat['group_set'] = group_set.numpy()
+    predict_mat['target_set'] = target_set.numpy()
+    predict_mat['output_set'] = output_set.numpy()
+
+    return confu_mat
+
+def calc_fairness_metric(constraint, confu_mat):
+    if constraint == 'eopp':
+
+    elif constraint == 'eo':
+    elif constraint == 'dp':
+
