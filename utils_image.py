@@ -37,7 +37,6 @@ def compute_confusion_matrix(constraint, dataloader, model):
                         labels[mask].cpu().numpy(), pred[mask].cpu().numpy(),
                         labels=[i for i in range(2)])
 
-
     predict_mat['group_set'] = group_set.numpy()
     predict_mat['target_set'] = target_set.numpy()
     predict_mat['output_set'] = output_set.numpy()
@@ -46,7 +45,11 @@ def compute_confusion_matrix(constraint, dataloader, model):
 
 def calc_fairness_metric(constraint, confu_mat):
     if constraint == 'eopp':
-
+        group0_tn, group0_fp, group0_fn, group0_tp = confu_mat['0'].ravel()
+        group1_tn, group1_fp, group1_fn, group1_tp = confu_mat['1'].ravel()
+        return abs(group0_tp/sum(confu_mat['0'].ravel()) - group1_tp/sum(confu_mat['1'].ravel()))
     elif constraint == 'eo':
+        pass
     elif constraint == 'dp':
+        pass
 

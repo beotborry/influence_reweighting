@@ -19,106 +19,17 @@ def grad_z(z, t, model, gpu=-1):
     loss = torch.nn.CrossEntropyLoss()(y, t)
 
     params = [p for p in model.parameters() if p.requires_grad]
-    return list(grad(loss, params, create_graph=True))
-
-def get_eopp_idx(dataset, load=False):
-    if load == False:
-        g0y1 = []
-        g1y1 = []
-
-        for i, data in tqdm(enumerate(dataset)):
-            _, _, group, target, _  = data
-            if group == 0 and target == 1: g0y1.append(i)
-            elif group == 1 and target == 1: g1y1.append(i)
-
-        ret = []
-        ret.append(np.array(g0y1))
-        ret.append(np.array(g1y1))
-        with open("./celeba_eopp_idx.txt", "wb") as fp:
-            pickle.dump(ret, fp)
-    elif load == True:
-        with open("./celeba_eopp_idx.txt", "rb") as fp:
-            ret = pickle.load(fp)
-        
-    return ret
-
-def get_eo_idx(dataset):
-    g0y0 = []
-    g0y1 = []
-    g1y0 = []
-    g1y1 = []
-
-    for i, data in enumerate(dataset):
-        _, _, group, target, _ = data
-        if group == 0 and target == 0: g0y0.append(i)
-        elif group == 0 and target == 1: g0y1.append(i)
-        elif group == 1 and target == 0: g1y0.append(i)
-        elif group == 1 and target == 1: g1y1.append(i)
-
-    ret = []
-    ret.append(np.array(g0y0))
-    ret.append(np.array(g0y1))
-    ret.append(np.array(g1y0))
-    ret.append(np.array(g1y1))
-
-    return ret
-
-
-def grad_V_tmp(constraint, dataset, model):
-    model.eval()
-
-    params = [p for p in model.parameters() if p.requires_grad]
-
-    if constraint == 'eopp':
-        losses = [0.0, 0.0]
-        eopp_idx = get_eopp_idx(dataset, load=True)
-        grads = [None, None]
-
-        with torch.no_grad():
-            for i, idx_arr in enumerate(eopp_idx):
-                for idx in tqdm(idx_arr):
-                    X, _, _, target, _ = dataset[idx]
-                    if torch.cuda.is_available(): X, target, model = X.cuda(), target.cuda(), model.cuda()
-                    X = torch.unsqueeze(X, 0)
-                    target = torch.unsqueeze(target, 0)
-                    losses[i] += nn.CrossEntropyLoss()(model(X), target)
-        
-        print("calc loss done")
-
-        for i, idx_arr in enumerate(eopp_idx):
-            for idx in tqdm(idx_arr):
-                X, _, _, target, _ = dataset[idx]
-                if torch.cuda.is_available(): X, target, model = X.cuda(), target.cuda(), model.cuda()
-                X = torch.unsqueeze(X, 0)
-                target = torch.unsqueeze(target, 0)
-                loss = nn.CrossEntropyLoss()(model(X), target)
-                _grad = grad(loss, params, create_graph=True)
-                
-                if grads[i] == None: grads[i] = _grad
-                else: grads[i] += grad
-            grads[i] /= len(idx_arr)
-
-        if losses[0] >= losses[1]:
-            return list(grads[0] - grads[1])
-        else: return list(grads[1] - grads[0])
-        #violation = abs(losses[0] - losses[1])
-        return list(grad(violation, params, create_graph=True))
-
-
-
-    elif constraint == 'eo':
-        pass
-    elif constraint == 'dp':
-        pass
-
+    return list(grad(loss, params, retain_graph=True))
 
 def grad_V(constraint, dataloader, model, save=False):
     params = [p for p in model.parameters() if p.requires_grad]
     if torch.cuda.is_available(): model = model.cuda()
     if constraint == 'eopp':
-        grad_0 = []
-        grad_1 = []
-        for i, data in enumerate(dataloader):
+        losses = [0.0, 0.0]
+        group_size = [0, 0]
+        result = []
+
+        for i, data in tqdm(enumerate(dataloader)):
             inputs, _, groups, targets, _ = data
             labels = targets
             groups = groups.long()
@@ -130,38 +41,48 @@ def grad_V(constraint, dataloader, model, save=False):
             loss = nn.CrossEntropyLoss(reduction='none')(outputs, labels)
 
             group_element = list(torch.unique(groups).numpy())
-
-            losses = torch.tensor([0.0, 0.0])
-            if torch.cuda.is_available(): losses = losses.cuda()
-
             for g in group_element:
                # mask = np.where(np.logical_and(groups == i, labels == 1))
                 group_mask = groups == g
                 label_mask = targets == 1
                 #print(torch.logical_and(group_mask,label_mask))
                 mask = torch.logical_and(group_mask, label_mask)
-                losses[g] += torch.sum(loss[mask])
+                with torch.no_grad():
+                    losses[g] += torch.sum(loss[mask]).item()
+
+                if group_size[g] == 0 and g == 0: grad_0 = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
+                elif group_size[g] == 0 and g == 1: grad_1 = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
+                
+                if group_size[g] != 0 and g == 0: 
+                    curr = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
+                    for i in range(len(grad_0)):
+                        grad_0[i] += curr[i]
+                elif group_size[g] != 0 and g == 1:
+                    curr = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
+                    for i in range(len(grad_1)):
+                        grad_1[i] += curr[i]
+
+                #losses[g] += torch.sum(loss[mask])
+                group_size[g] += len(loss[mask])
                 #print(list(grad(loss_sum, params, create_graph=True)))
-            
-        losses[0] /= 83342
-        losses[1] /= 43446
 
-        loss_diff = abs(losses[0] - losses[1])
-        #print(list(grad(loss_diff, params, create_graph=True)))
-           # _grad = []
-           # for elem in grad(loss_sum, params, create_graph=True):
-           #     _grad.append(elem.cpu())
-           # #with torch.no_grad():
-           # #    _grad = list(grad(loss_sum, params, create_graph=True))
+        print(group_size)
+        losses[0] /= group_size[0]
+        losses[1] /= group_size[1]
+        print(losses)
 
-           # with torch.no_grad():
-           #     if i == 0 and g == 0: grad_0 = _grad
-           #     elif i == 0 and g == 1: grad_1 = _grad
-           #     elif g == 0 : grad_0 += [i + j for i in grad_0 for j in _grad]
-           #     elif g == 1 : grad_1 += [i + j for i in grad_1 for j in _grad]
+        if losses[0] > losses[1]:
+            for elem in zip(grad_0, grad_1):
+                result.append(elem[0] / group_size[0] - elem[1] / group_size[1])
+        else:
+            for elem in zip(grad_0, grad_1):
+                result.append(elem[1] / group_size[1] - elem [0] / group_size[0])
+
+        #loss_diff = abs(losses[0] - losses[1])
+
         if save == True:
             with open("celeba_gradV_seed_100.txt", "wb") as fp:
-                pickle.dump(list(grad(loss_diff, params, create_graph=True)), fp)
+                pickle.dump(result, fp)
         else:
             return list(grad(loss_diff, params, create_graph=True))
 
@@ -207,7 +128,7 @@ def s_test(model, dataloader, random_sampler, constraint, weights, recursion_dep
 
 def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, recursion_depth=100, damp=0.01, scale=500.0, save=True):
 
-    all = s_test(model, dataloader, random_sampler, constraint, weights, recursion_depth, damp, scale, load_gradV=False, save=False)
+    all = s_test(model, dataloader, random_sampler, constraint, weights, recursion_depth, damp, scale, load_gradV=True, save=False)
 
     for i in tqdm(range(1, r)):
         cur = s_test(model, dataloader, random_sampler, constraint, weights, recursion_depth, damp, scale, load_gradV=True, save=False)
@@ -239,15 +160,15 @@ def calc_influence(z, t, s_test, model, dataset_size):
     
     return influence
 
-def calc_influence_dataset(model, dataloader, random_sampler, constraint, weights, recursion_depth=5000, damp=0.01, scale=25.0, load_s_test=True):
+def calc_influence_dataset(model, dataloader, random_sampler, constraint, weights, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
     if load_s_test == True:
         with open("celeba_s_test_avg_seed_100.txt", "rb") as fp:
             s_test_vec = pickle.load(fp)
-    else: s_test_vec = avg_s_test(model, dataloader, random_sampler, constraint, weights, recursion_depth, damp, scale, save=True)
+    else: s_test_vec = avg_s_test(model, dataloader, random_sampler, constraint, weights, r, recursion_depth, damp, scale, save=True)
 
     influences = np.zeros(len(dataloader.dataset))
-    torch.cuda.synchornize()
-    for i, data in enumerate(dataloader):
+    torch.cuda.synchronize()
+    for i, data in tqdm(enumerate(dataloader)):
         X, _, _, t, tup = data
         for X_elem, t_elem, idx in zip(X, t, tup[0]):
             influences[idx] = calc_influence(X, t, s_test_vec, model, len(dataloader.dataset)).cpu()

@@ -1,12 +1,13 @@
 import torch
 from data_handler.dataloader_factory import DataloaderFactory
 import numpy as np
-from influence_function_image import avg_s_test, s_test, grad_V
+from influence_function_image import avg_s_test, s_test, grad_V, calc_influence_dataset
 import time
+import pickle
 
 GPU_NUM = 3
 device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
-torch.cuda.set_device(device)
+if torch.cuda.is_available(): torch.cuda.set_device(device)
 
 print(device)
 
@@ -30,12 +31,29 @@ train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler
 
 weights = torch.ones(len(train_dataset))
 
-#print("start")
-#grad_V('eopp', train_loader, model, save=True)
 '''
-print(s_test(model=model, dataloader=train_loader, random_sampler=train_sampler, constraint='eopp', weights=weights, recursion_depth=t, load_gradV=True, save=True))
+print("start")
+grad_V('eopp', train_loader, model, save=True)
+print("end")
 '''
+'''
+print("start")
+print(s_test(model=model, dataloader=train_loader, random_sampler=train_sampler, constraint='eopp', weights=weights, r=rrecursion_depth=t, load_gradV=True, save=True))
+print("end")
+'''
+
 #print("end")
 print("start")
 print(avg_s_test(model = model, dataloader= train_loader, random_sampler=train_sampler, constraint='eopp', weights=weights, recursion_depth=t, r = r))
+print("end")
+
+'''
+influences = calc_influence_dataset(model=model, dataloader=train_loader, random_sampler=train_sampler,
+                                    constraint="eopp", weights=weights, recursion_depth=t, r=r, load_s_test=True)
+print(influences)
+print(len(influences))
+
+with open("celeba_influence_score_seed_100.txt", "wb") as fp:
+          pickle.dump(influences, fp)
+'''
 

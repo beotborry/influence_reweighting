@@ -9,3 +9,10 @@ class DatasetFactory:
             from data_handler.celeba import CelebA
             root='./data/'
             return CelebA(root=root, split=split, transform=transform, target_attr=target, labelwise=labelwise)
+        
+        elif name == 'utkface':
+            from data_handler.utkface import UTKFaceDataset
+            root='./data/UTKFace'
+            return UTKFaceDataset(root=root, split=split, transform=transform, labelwise=labelwise)
+            
+
