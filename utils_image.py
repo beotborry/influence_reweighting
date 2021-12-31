@@ -3,11 +3,11 @@ import numpy as np
 from sklearn.metrics import confusion_matrix
 from collections import defaultdict
 
-def compute_confusion_matrix(constraint, dataloader, model):
+def compute_confusion_matrix(dataloader, model, num_classes=2):
     model.eval()
     if torch.cuda.is_available(): model = model.cuda()
     
-    confu_mat = defaultdict(lambda: np.zeros((2,2)))
+    confu_mat = defaultdict(lambda: np.zeros((num_classes, num_classes)))
 
     predict_mat = {}
     output_set = torch.tensor([])
@@ -35,7 +35,7 @@ def compute_confusion_matrix(constraint, dataloader, model):
                 if len(labels[mask]) != 0:
                     confu_mat[str(i)] += confusion_matrix(
                         labels[mask].cpu().numpy(), pred[mask].cpu().numpy(),
-                        labels=[i for i in range(2)])
+                        labels=[i for i in range(num_classes)])
 
     predict_mat['group_set'] = group_set.numpy()
     predict_mat['target_set'] = target_set.numpy()
@@ -43,13 +43,32 @@ def compute_confusion_matrix(constraint, dataloader, model):
 
     return confu_mat
 
-def calc_fairness_metric(constraint, confu_mat):
+def calc_fairness_metric(constraint, confu_mat, num_groups=2, num_classes=2):
     if constraint == 'eopp':
         group0_tn, group0_fp, group0_fn, group0_tp = confu_mat['0'].ravel()
         group1_tn, group1_fp, group1_fn, group1_tp = confu_mat['1'].ravel()
         return abs(group0_tp/sum(confu_mat['0'].ravel()) - group1_tp/sum(confu_mat['1'].ravel()))
+
     elif constraint == 'eo':
-        pass
+        '''
+        Compute DEO_A
+        '''
+        result = 0.0
+        eval_eo_list = np.zeros((num_groups, num_classes))
+        eval_data_count = np.zeros((num_groups, num_classes))
+
+        for g in range(num_groups):
+            for l in range(num_classes):
+                eval_data_count[g, l] = sum(confu_mat['g'][l,:]).float()
+                eval_eo_list[g, l] = confu_mat['g'][l,l]
+        
+        eval_eo_prob = eval_eo_list / eval_data_count
+
+        for l in range(num_classes):
+            result += max(eval_eo_prob[:, l]) - min(eval_eo_prob[:, l])
+        
+        return result / num_classes
+
     elif constraint == 'dp':
         pass
 

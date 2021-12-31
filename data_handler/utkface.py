@@ -18,7 +18,7 @@ class UTKFaceDataset(VisionDataset):
     num_map = {
         'age' : 100,
         'gender' : 2,
-        'race' : 4
+        'race' : 2
     }
 
     def __init__(self, root, split='train', transform=None, target_transform=None,
@@ -88,7 +88,7 @@ class UTKFaceDataset(VisionDataset):
     def _delete_others_n_age_filter(self):
 
         self.filename = [image for image in self.filename
-                         if ((image.split('_')[self.fea_map['race']] != '4'))]
+                         if ((image.split('_')[self.fea_map['race']] not in ('4', '3', '2')))]
         ages = [self._transform_age(int(image.split('_')[self.fea_map['age']])) for image in self.filename]
         self.num_map['age'] = len(set(ages))
 
@@ -103,6 +103,7 @@ class UTKFaceDataset(VisionDataset):
         return int(sensi), int(label)
         
     def _transform_age(self, age):
+        '''
         if age<20:
             label = 0
         elif age<40:
@@ -110,6 +111,11 @@ class UTKFaceDataset(VisionDataset):
         else:
             label = 2
         return label 
+        '''
+        if age <= 30:
+            label = 1
+        else: label = 0
+        return label
 
     def _make_data(self):
         import copy

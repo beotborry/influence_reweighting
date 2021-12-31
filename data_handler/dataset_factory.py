@@ -14,5 +14,5 @@ class DatasetFactory:
             from data_handler.utkface import UTKFaceDataset
             root='./data/UTKFace'
             return UTKFaceDataset(root=root, split=split, transform=transform, labelwise=labelwise)
-            
+
 
