@@ -20,6 +20,7 @@ def get_args():
     parser.add_argument('--seed', default=None, type=int)
     parser.add_argument('--idx_save', default=0, type=int)
     parser.add_argument('--model_save', default=0, type=int)
+    parser.add_argument('--target', default=None)
 
     args = parser.parse_args()
 

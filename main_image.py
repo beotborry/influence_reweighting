@@ -25,15 +25,13 @@ def main():
     fairness_constraint = args.constraint
     method = args.method
     epoch = args.epoch
-    iteration = args.iteration
-    scale_factor = args.scaler
-    eta = args.eta
+    target = args.target
 ###########################################################
 
-    num_classes, num_groups, train_loader, test_loader = DataloaderFactory.get_dataloader(args.dataset, img_size=128,
-                                                                                          batch_size=128, seed=args.seed,
+    num_classes, num_groups, train_loader, test_loader = DataloaderFactory.get_dataloader(dataset, img_size=128,
+                                                                                          batch_size=128, seed=seed,
                                                                                           num_workers=4,
-                                                                                          target='Young')
+                                                                                          target=target)
 
     # X, feature, group, target, (idx, img_name) = dataloader
     train_dataset = train_loader.dataset
@@ -82,7 +80,8 @@ def main():
         print('Test Accuracy: {:2f}'.format(test_acc * 100))
         if test_acc * 100 >= best_acc:
             print('Test Accuracy: {:2f}, Model Save!'.format(test_acc * 100))
-            torch.save(model, './model/celeba_resnet18_target_young')
+            torch.save(model, './model/{}_resnet18_target_{}'.format(dataset, target))
+            #torch.save(model, './model/celeba_resnet18_target_young')
             best_acc = test_acc * 100
 
     
