@@ -4,7 +4,6 @@ import numpy as np
 from tqdm import tqdm
 import pickle
 from torch.autograd import grad
-import time
 
 def grad_z(z, t, model, gpu=-1):
     if z.dim() == 3: z = torch.unsqueeze(z, 0)
