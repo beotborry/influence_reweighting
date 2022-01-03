@@ -12,7 +12,7 @@ class DatasetFactory:
         
         elif name == 'utkface':
             from data_handler.utkface import UTKFaceDataset
-            root='./data/UTKFace'
+            root='./data/utkface'
             return UTKFaceDataset(root=root, split=split, transform=transform, labelwise=labelwise)
 
 

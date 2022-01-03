@@ -36,7 +36,7 @@ def main():
     
     print('Test Acc: {:.2f}'.format(test_acc * 100))
     
-    confu_mat = compute_confusion_matrix(fairness_constraint, test_loader, model)
+    confu_mat = compute_confusion_matrix(test_loader, model)
     #print(confu_mat['0'].ravel())
     #print(confu_mat['1'].ravel())
     print(calc_fairness_metric(fairness_constraint, confu_mat))

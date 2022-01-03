@@ -90,6 +90,7 @@ class UTKFaceDataset(VisionDataset):
         self.filename = [image for image in self.filename
                          if ((image.split('_')[self.fea_map['race']] not in ('4', '3', '2')))]
         ages = [self._transform_age(int(image.split('_')[self.fea_map['age']])) for image in self.filename]
+        
         self.num_map['age'] = len(set(ages))
 
     def _filename2SY(self, filename):        
@@ -112,9 +113,10 @@ class UTKFaceDataset(VisionDataset):
             label = 2
         return label 
         '''
-        if age <= 30:
+        if age <= 35:
             label = 1
         else: label = 0
+
         return label
 
     def _make_data(self):
@@ -138,6 +140,7 @@ class UTKFaceDataset(VisionDataset):
         self.filename = tmp
         
     def _data_count(self):
+        print(self.split)
         data_count = np.zeros((self.num_groups, self.num_classes), dtype=int)
         data_set = self.filename
 
@@ -146,5 +149,5 @@ class UTKFaceDataset(VisionDataset):
             data_count[s, l] += 1
         
         for i in range(self.num_groups):
-            print('# of %d groyp data : '%i, data_count[i, :])
+            print('# of %d group data : '%i, data_count[i, :])
         return data_count

@@ -1,4 +1,4 @@
-=import torch
+import torch
 import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
@@ -21,7 +21,7 @@ def grad_z(z, t, model, gpu=-1):
     params = [p for p in model.parameters() if p.requires_grad]
     return list(grad(loss, params, retain_graph=True))
 
-def grad_V(constraint, dataloader, model, save=False):
+def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
     params = [p for p in model.parameters() if p.requires_grad]
     if torch.cuda.is_available(): model = model.cuda()
     if constraint == 'eopp':
@@ -77,23 +77,21 @@ def grad_V(constraint, dataloader, model, save=False):
         else:
             for elem in zip(grad_0, grad_1):
                 result.append(elem[1] / group_size[1] - elem [0] / group_size[0])
-
-        #loss_diff = abs(losses[0] - losses[1])
-
+                
         if save == True:
-            with open("celeba_gradV_seed_100.txt", "wb") as fp:
+            with open("{}_gradV_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
                 pickle.dump(result, fp)
         else:
-            return list(grad(loss_diff, params, create_graph=True))
+            return result
 
-def s_test(model, dataloader, random_sampler, constraint, weights, recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False):
+def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False):
     model.eval()
 
     if load_gradV == False:
-         v = grad_V(constraint, dataloader, model, save=False)
+         v = grad_V(constraint, dataloader, model, _dataset, _seed, save=False)
     else:
         #grad_V(constraint, dataloader, model, save=True)
-        with open("celeba_gradV_seed_100.txt", "rb") as fp:
+        with open("{}_gradV_seed_{}.txt".format(_dataset, _seed), "rb") as fp:
             v = pickle.load(fp)
 
     h_estimate = v.copy()
@@ -111,32 +109,30 @@ def s_test(model, dataloader, random_sampler, constraint, weights, recursion_dep
         break
 
     for i in tqdm(range(recursion_depth)):
-        start = time.time()
         hv = hvp(loss[i], params, h_estimate)
 
-        start = time.time()
         with torch.no_grad():
             h_estimate = [
                 _v + (1 - damp) * _h_e - _hv / scale
                 for _v, _h_e, _hv in zip(v, h_estimate, hv)]
 
     if save == True:
-        with open("celeba_s_test_seed_100.txt", "wb") as fp:
+        with open("{}_s_test_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
             pickle.dump(h_estimate, fp)
 
     return h_estimate
 
-def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, recursion_depth=100, damp=0.01, scale=500.0, save=True):
+def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, recursion_depth=100, damp=0.01, scale=500.0, save=True):
 
-    all = s_test(model, dataloader, random_sampler, constraint, weights, recursion_depth, damp, scale, load_gradV=True, save=False)
+    all = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth, damp, scale, load_gradV=True, save=False)
 
     for i in tqdm(range(1, r)):
-        cur = s_test(model, dataloader, random_sampler, constraint, weights, recursion_depth, damp, scale, load_gradV=True, save=False)
+        cur = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth, damp, scale, load_gradV=True, save=False)
         all = [a + c for a, c in zip(all, cur)]
 
     all = [a / r for a in all]
     if save == True:
-        with open("celeba_s_test_avg_seed_100.txt", "wb") as fp:
+        with open("{}_s_test_avg_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
             pickle.dump(all, fp)
     return all
 
@@ -160,21 +156,17 @@ def calc_influence(z, t, s_test, model, dataset_size):
     
     return influence
 
-def calc_influence_dataset(model, dataloader, random_sampler, constraint, weights, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
+def calc_influence_dataset(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
     if load_s_test == True:
-        with open("celeba_s_test_avg_seed_100.txt", "rb") as fp:
+        with open("{}_s_test_avg_seed_{}.txt".format(_dataset, _seed), "rb") as fp:
             s_test_vec = pickle.load(fp)
-    else: s_test_vec = avg_s_test(model, dataloader, random_sampler, constraint, weights, r, recursion_depth, damp, scale, save=True)
+    else: s_test_vec = avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, recursion_depth, damp, scale, save=True)
 
     influences = np.zeros(len(dataloader.dataset))
     torch.cuda.synchronize()
     for i, data in tqdm(enumerate(dataloader)):
         X, _, _, t, tup = data
         for X_elem, t_elem, idx in zip(X, t, tup[0]):
-            influences[idx] = calc_influence(X, t, s_test_vec, model, len(dataloader.dataset)).cpu()
+            influences[idx] = calc_influence(X_elem, t_elem, s_test_vec, model, len(dataloader.dataset)).cpu()
    
     return influences
-
-
-
-
