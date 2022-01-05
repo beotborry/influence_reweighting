@@ -114,7 +114,7 @@ class UTKFaceDataset(VisionDataset):
             label = 2
         return label 
         '''
-        if age <= 35:
+        if age <= 25:
             label = 1
         else: label = 0
 
@@ -122,7 +122,7 @@ class UTKFaceDataset(VisionDataset):
 
     def _make_data(self):
         import copy
-        min_cnt = 100
+        min_cnt = 200
         data_count = np.zeros((self.num_groups, self.num_classes), dtype=int)
         if self.split == 'train' or self.split == 'valid':
             tmp = copy.deepcopy(self.filename)
