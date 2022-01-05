@@ -29,10 +29,9 @@ def main():
             z, _, _, t, _ = data
             if torch.cuda.is_available(): z, t, model = z.cuda(), t.cuda(), model.cuda()
             y_pred = model(z)
-
-            test_acc += get_accuracy(y_pred, t)
+            test_acc += torch.sum(get_accuracy(y_pred, t, reduction='none')).item()
         
-        test_acc /= i
+        test_acc /= len(test_loader.dataset)
     
     print('Test Acc: {:.2f}'.format(test_acc * 100))
     

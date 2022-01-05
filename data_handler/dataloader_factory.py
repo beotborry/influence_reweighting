@@ -1,3 +1,4 @@
+from torch.cuda import init
 from data_handler.dataset_factory import DatasetFactory
 
 import numpy as np
@@ -47,8 +48,11 @@ class DataloaderFactory:
 
         test_dataset = DatasetFactory.get_dataset(name, test_preprocessing, 'test', target=target,
                                                   seed=seed, skew_ratio=skew_ratio)
+                                        
         train_dataset = DatasetFactory.get_dataset(name, preprocessing, split='train', target=target,
                                                    seed=seed, skew_ratio=skew_ratio, labelwise=labelwise)
+
+        valid_dataset = DatasetFactory.get_dataset(name, preprocessing, split='valid', target=target, seed=seed, skew_ratio=skew_ratio)
 
         def _init_fn(worker_id):
             np.random.seed(int(seed))
@@ -69,8 +73,10 @@ class DataloaderFactory:
 
             test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
                                      num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True)
+            
+            valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True)
 
         print('# of test data : {}'.format(len(test_dataset)))
         print('Dataset loaded.')
 
-        return num_classes, num_groups, train_dataloader, test_dataloader
+        return num_classes, num_groups, train_dataloader, test_dataloader, valid_dataloader

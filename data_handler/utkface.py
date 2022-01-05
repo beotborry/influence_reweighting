@@ -5,6 +5,7 @@ from utils import list_files
 from natsort import natsorted
 import random
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 class UTKFaceDataset(VisionDataset):
     
@@ -123,7 +124,7 @@ class UTKFaceDataset(VisionDataset):
         import copy
         min_cnt = 100
         data_count = np.zeros((self.num_groups, self.num_classes), dtype=int)
-        if self.split == 'train':
+        if self.split == 'train' or self.split == 'valid':
             tmp = copy.deepcopy(self.filename)
         else:
             tmp = []
@@ -132,13 +133,22 @@ class UTKFaceDataset(VisionDataset):
             s, l = self._filename2SY(i)
             data_count[s, l] += 1
             if data_count[s, l] <= min_cnt:
-                if self.split =='train':
+                if self.split =='train' or self.split == 'valid':
                     tmp.remove(i)
                 else:
                     tmp.append(i)
-                    
-        self.filename = tmp
-        
+
+        '''Todo add valid split code'''
+        pivot = int(len(tmp) * 0.8)
+        train_filename = tmp[:pivot]
+        valid_filename = tmp[pivot:]
+
+        if self.split == 'train':
+            self.filename = train_filename
+        elif self.split == 'valid':
+            self.filename = valid_filename
+        elif self.split == 'test':
+            self.filename = tmp
     def _data_count(self):
         print(self.split)
         data_count = np.zeros((self.num_groups, self.num_classes), dtype=int)

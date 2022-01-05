@@ -41,10 +41,10 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
 
             group_element = list(torch.unique(groups).numpy())
             for g in group_element:
-               # mask = np.where(np.logical_and(groups == i, labels == 1))
+
                 group_mask = groups == g
                 label_mask = targets == 1
-                #print(torch.logical_and(group_mask,label_mask))
+
                 mask = torch.logical_and(group_mask, label_mask)
                 with torch.no_grad():
                     losses[g] += torch.sum(loss[mask]).item()
@@ -61,9 +61,7 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
                     for i in range(len(grad_1)):
                         grad_1[i] += curr[i]
 
-                #losses[g] += torch.sum(loss[mask])
                 group_size[g] += len(loss[mask])
-                #print(list(grad(loss_sum, params, create_graph=True)))
 
         print(group_size)
         losses[0] /= group_size[0]
