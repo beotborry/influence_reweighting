@@ -34,7 +34,7 @@ if torch.cuda.is_available(): torch.cuda.set_device(device)
 print(device)
 
 
-model = torch.load("./model/{}_resnet18_target_{}".format(dataset, target))
+model = torch.load("./model/{}_resnet18_target_{}_seed_{}".format(dataset, target, seed))
 
 num_classes, num_groups, train_loader, test_loader, valid_loader = DataloaderFactory.get_dataloader(dataset, img_size=128,
                                                                                       batch_size=128, seed=100,

@@ -121,6 +121,14 @@ class UTKFaceDataset(VisionDataset):
         return label
 
     def _make_data(self):
+        # data_count = np.zeros((self.num_groups, self.num_classes), dype=int)
+
+        # for idx, filename in enumerate(self.filename):
+        #     s, l = self._filename2SY(filename)
+            
+
+
+
         import copy
         min_cnt = 200
         data_count = np.zeros((self.num_groups, self.num_classes), dtype=int)

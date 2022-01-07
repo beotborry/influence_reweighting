@@ -1,2 +1,6 @@
 seed: 100, k: 250, Trng Acc: 87.56, Trng Fairness Metric: 1.28, Test Acc: 85.75, Test Fairness Metric: 1.08, Tradeoff: 6.9419 
 seed: 100, k: 250, Trng Acc: 87.56, Trng Fairness Metric: 1.28, Test Acc: 85.75, Test Fairness Metric: 1.08, Tradeoff: 6.9419 
+seed: 0, k: 250, Trng Acc: 86.34, Trng Fairness Metric: 0.33, Test Acc: 85.30, Test Fairness Metric: 3.15, Tradeoff: 6.5865 
+seed: 0, k: 250, Trng Acc: 86.34, Trng Fairness Metric: 0.33, Test Acc: 85.30, Test Fairness Metric: 3.15, Tradeoff: 6.5865 
+seed: 0, k: 250, Trng Acc: 86.34, Trng Fairness Metric: 0.33, Test Acc: 85.30, Test Fairness Metric: 3.15, Tradeoff: 6.5865 
+seed: 1, k: 250, Trng Acc: 86.35, Trng Fairness Metric: 0.42, Test Acc: 85.24, Test Fairness Metric: 3.70, Tradeoff: 6.5243 

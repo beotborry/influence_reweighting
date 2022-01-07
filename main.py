@@ -17,12 +17,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 def main():
-    GPU_NUM = 3
+    args = get_args()
+    
+    GPU_NUM = args.gpu
     device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
     if torch.cuda.is_available(): torch.cuda.set_device(device)
 
     print(device)
-    args = get_args()
 
     seed = args.seed
     set_seed(seed)
@@ -43,21 +44,40 @@ def main():
     elif dataset == "compas":
         from compas_dataloader import get_data
 
-    X_train, y_train, X_test, y_test, protected_train, protected_test = get_data()
-    print(X_train.shape, X_test.shape)
+    _X_train, _y_train, X_test, y_test, _protected_train, protected_test = get_data()
+
+    pivot = int(len(_X_train) * 0.8)
+    X_train = _X_train[:pivot]
+    y_train = _y_train[:pivot]
+    protected_train = [_protected_train[0][:pivot], _protected_train[1][:pivot]]
+
+    X_valid = _X_train[pivot:]
+    y_valid = _y_train[pivot:]
+    protected_valid = [_protected_train[0][pivot:], _protected_train[1][pivot:]]
+
+
+    print(X_train.shape, X_valid.shape, X_test.shape, len(protected_train))
+
 
     if method == "naive_leave_k_out":
         k = args.k
         top_k_idx = np.load("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset) + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx.npy")
+        
+        print("# of label 0: {}, # of label 1: {}".format(sum(y_train[top_k_idx]), k - sum(y_train[top_k_idx])))
+        
         X_train = np.delete(X_train, top_k_idx, axis=0)
         y_train = np.delete(y_train, top_k_idx, axis=0)
         print(X_train.shape, y_train.shape)
+        
         print(sum(protected_train[0][top_k_idx]), sum(protected_train[1][top_k_idx]))
+
+
         protected_train[0] = np.delete(protected_train[0], top_k_idx, axis=0)
         protected_train[1] = np.delete(protected_train[1], top_k_idx, axis=0)
     elif method == "naive_leave_bottom_k_out":
         k = args.k
         bottom_k_idx = np.load("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset) + '_' + str(fairness_constraint) + "_bottom" + str(k) + "_idx.npy")
+        print("# of label 0: {}, # of label 1: {}".format(sum(y_train[bottom_k_idx]), k - sum(y_train[bottom_k_idx])))
         X_train = np.delete(X_train, bottom_k_idx, axis=0)
         y_train = np.delete(y_train, bottom_k_idx, axis=0)
         print(X_train.shape)
@@ -65,6 +85,7 @@ def main():
         protected_train[0] = np.delete(protected_train[0], bottom_k_idx, axis=0)
         protected_train[1] = np.delete(protected_train[1], bottom_k_idx, axis=0)
         print(X_train.shape)
+
     elif method == "leave_random_k_out":
         k = args.k
         random_k_idx = np.random.randint(0, len(X_train)-1, k)
@@ -75,12 +96,24 @@ def main():
         print(X_train.shape)
 
     X_groups_train, y_groups_train = split_dataset(X_train, y_train, protected_train)
+    train_set_count = np.zeros((2,2))
+
+    train_set_count[0][0] = len(y_groups_train[0]) - sum(y_groups_train[0])
+    train_set_count[0][1] = sum(y_groups_train[0])
+    train_set_count[1][0] = len(y_groups_train[1]) - sum(y_groups_train[1])
+    train_set_count[1][1] = sum(y_groups_train[1])
+    print(train_set_count)
+
+
+    X_groups_valid, y_groups_valid = split_dataset(X_valid, y_valid, protected_valid)
     X_groups_test, y_groups_test = split_dataset(X_test, y_test, protected_test)
 
     X_train = torch.FloatTensor(X_train)
     y_train = torch.LongTensor(y_train)
     X_test = torch.FloatTensor(X_test)
     y_test = torch.LongTensor(y_test)
+    X_valid = torch.FloatTensor(X_valid)
+    y_valid = torch.LongTensor(y_valid)
 
     batch_size = 128
 
@@ -88,6 +121,9 @@ def main():
 
     train_dataset = CustomDataset(X_train, y_train)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+
+    valid_dataset = CustomDataset(X_valid, y_valid)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
     test_dataset = CustomDataset(X_test, y_test)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
@@ -105,6 +141,7 @@ def main():
         get_idx = get_eo_idx
 
     constraint_idx_train = get_idx(y_groups_train)
+    constraint_idx_valid = get_idx(y_groups_valid)
     constraint_idx_test = get_idx(y_groups_test)
 
     if dataset in ("compas", "adult", "bank"):
@@ -274,9 +311,11 @@ def main():
         k = args.k
         random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
         train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
-        influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_train, X_groups_train, y_groups_train,
-                                   model, train_sampler, weights, gpu=gpu, constraint=fairness_constraint, r=r,
-                                   recursion_depth=t, scale=500.0))
+
+        influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_valid, X_groups_valid, y_groups_valid, model, train_sampler, weights, gpu=gpu, constraint=fairness_constraint, r=r, recursion_depth=t, scale=500.0))
+        # influence_scores = np.array(calc_influence_dataset(X_train, y_train, constraint_idx_train, X_groups_train, y_groups_train,
+        #                            model, train_sampler, weights, gpu=gpu, constraint=fairness_constraint, r=r,
+        #                            recursion_depth=t, scale=500.0))
 
         largest_idx = np.argpartition(influence_scores, -k)[-k:]
         smallest_idx = np.argpartition(influence_scores, k)[:k]

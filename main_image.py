@@ -90,20 +90,23 @@ def main():
             
             if test_acc * 100 >= best_acc:
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
-                torch.save(model, './model/{}_resnet18_target_{}'.format(dataset, target))
+                torch.save(model, './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
                 best_acc = test_acc * 100
 
             scheduler.step(test_acc)
-        #torch.save(model, './model/{}_resnet18_target_{}'.format(dataset, target))
+        #torch.save(model, './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
 
     elif method == 'naive_leave_k_out':
         test_acc_arr = []
         test_fairness_metric_arr = []
         trng_acc_arr = []
         trng_fairness_metric_arr = []
+        valid_acc_arr = []
+        valid_fairness_metric_arr = []
 
         model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
         k = args.k
+        print("k: {}".format(k))
 
         optimizer = AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
         criterion = nn.CrossEntropyLoss(reduction='none')
@@ -113,7 +116,7 @@ def main():
             influences = np.array(pickle.load(fp))
 
         top_k_idx =  np.argpartition(influences, -k)[-k:]
-        print(influences[top_k_idx])
+        #print(influences[top_k_idx])
 
         best_acc = 0.0
         best_fairness_metric = 100.0
@@ -175,11 +178,29 @@ def main():
             test_acc_arr.append(test_acc.item())
             test_fairness_metric_arr.append(test_fairness_metric)
 
+            valid_acc = 0.0
+            with torch.no_grad():
+                for i, data in enumerate(valid_loader):
+                    z, _, _, t, _ = data
+                    if torch.cuda.is_available(): z, t, model = z.cuda(), t.cuda(), model.cuda()
+                    y_pred = model(z)
+
+                    valid_acc += torch.sum(get_accuracy(y_pred, t, reduction='none'))
+                valid_acc /= len(valid_loader.dataset)
+
+            confu_mat = compute_confusion_matrix(valid_loader, model)
+            valid_fairness_metric = calc_fairness_metric("eopp", confu_mat)
+
+            print("Valid Acc: {:.2f}, Valid fairness metric: {:.2f}".format(valid_acc * 100, valid_fairness_metric * 100))
+
+            valid_acc_arr.append(valid_acc.item())
+            valid_fairness_metric_arr.append(valid_fairness_metric)
+
             scheduler.step(test_acc)
 
-        log_arr = [trng_acc_arr, trng_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
+        log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
-        with open("./{}_seed_{}_k_{}_log.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./image_log/{}_seed_{}_k_{}_log.txt".format(dataset, seed, k), "wb") as fp:
             pickle.dump(log_arr, fp)
 
     elif method == "naive_leave_bottom_k_out":
@@ -187,9 +208,12 @@ def main():
         test_fairness_metric_arr = []
         trng_acc_arr = []
         trng_fairness_metric_arr = []
+        valid_acc_arr = []
+        valid_fairness_metric_arr = []
 
         model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
         k = args.k
+        print("k: {}".format(k))
 
         optimizer = AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
         criterion = nn.CrossEntropyLoss(reduction='none')
@@ -199,7 +223,7 @@ def main():
             influences = np.array(pickle.load(fp))
 
         bottom_k_idx =  np.argpartition(influences, k)[:k]
-        print(influences[bottom_k_idx])
+        #print(influences[bottom_k_idx])
 
         best_acc = 0.0
         best_fairness_metric = 100.0
@@ -260,12 +284,31 @@ def main():
 
             test_acc_arr.append(test_acc.item())
             test_fairness_metric_arr.append(test_fairness_metric)
-            
+
+            valid_acc = 0.0
+            with torch.no_grad():
+                for i, data in enumerate(valid_loader):
+                    z, _, _, t, _ = data
+                    if torch.cuda.is_available(): z, t, model = z.cuda(), t.cuda(), model.cuda()
+                    y_pred = model(z)
+
+                    valid_acc += torch.sum(get_accuracy(y_pred, t, reduction='none'))
+                valid_acc /= len(valid_loader.dataset)
+
+            confu_mat = compute_confusion_matrix(valid_loader, model)
+            valid_fairness_metric = calc_fairness_metric("eopp", confu_mat)
+
+            print("Valid Acc: {:.2f}, Valid fairness metric: {:.2f}".format(valid_acc * 100, valid_fairness_metric * 100))
+
+            valid_acc_arr.append(valid_acc.item())
+            valid_fairness_metric_arr.append(valid_fairness_metric)
+
+
             scheduler.step(test_acc)
 
-        log_arr = [trng_acc_arr, trng_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
+        log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
-        with open("./{}_seed_{}_bottom_k_{}_log.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./image_log/{}_seed_{}_bottom_k_{}_log.txt".format(dataset, seed, k), "wb") as fp:
             pickle.dump(log_arr, fp)
 
 

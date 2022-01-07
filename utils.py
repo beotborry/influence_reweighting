@@ -138,6 +138,7 @@ def calc_fairness_metric(constraint, z_groups, t_groups, model):
     tn_0, fp_0, fn_0, tp_0 = confusion_matrix_groups[0]
     tn_1, fp_1, fn_1, tp_1 = confusion_matrix_groups[1]
 
+    print(confusion_matrix_groups[0], confusion_matrix_groups[1])
 
     if constraint == 'eopp':
         return abs(tp_0 / (fn_0 + tp_0) - tp_1 / (fn_1 + tp_1))
