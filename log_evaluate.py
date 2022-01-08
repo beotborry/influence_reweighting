@@ -25,7 +25,7 @@ constraint = args.constraint
 gpu = args.gpu
 
 naive_acc, naive_fair = model_evaluate(dataset, target, constraint, seed, gpu)
-print("Naive Acc: {:.2f}, Naive Fair: {:.2f}".format(naive_acc, naive_fair))
+#print("Naive Acc: {:.2f}, Naive Fair: {:.2f}".format(naive_acc, naive_fair))
 
 
 for k in range(10, 210, 10):
@@ -37,14 +37,27 @@ for k in range(10, 210, 10):
     with open(filename.format(dataset, seed, k), "rb") as fp:
         log = pickle.load(fp)
         best_tradeoff = 0.0
-        best_idx = 0
+        
+        best_valid_idx = 0
+        best_valid_acc = 0.0
 
-        best_acc = 0.0
+        best_test_idx = 0
+        best_test_acc = 0.0
+
         i = 0
 
         candidate_idx = []
 
         for acc, fair in zip(log[2], log[3]):
+
+            if acc * 100 >= best_valid_acc:
+                best_valid_acc = acc * 100
+                best_valid_idx = i
+            
+            i += 1
+
+        i = 0
+        for acc, fair in zip(log[4], log[5]):
             # # print("k: {}, test_acc: {:.2f}, fair: {:.2f}".format(k, acc * 100, fair * 100))
             # if acc * 100 >= naive_acc:
             #     #print("k: {}, acc: {:.2f}, fair: {:.2f}".format(k, acc * 100, fair * 100))
@@ -60,9 +73,9 @@ for k in range(10, 210, 10):
             #     #         beat_acc = acc * 100
             #     #         best_idx = i
 
-            if acc * 100 >= best_acc:
-                best_acc = acc * 100
-                best_idx = i
+            if acc * 100 >= best_test_acc:
+                best_test_acc = acc * 100
+                best_test_idx = i
 
             i += 1
 
@@ -80,7 +93,9 @@ for k in range(10, 210, 10):
         #     print("k:{}, best tradeoff acc:{:.2f}, fair: {:.2f}".format(k, log[2][best_idx] * 100, log[3][best_idx] * 100))
         # else:
         #     print("k:{}, best acc: {:.2f}, fair: {:.2f}".format(k, log[2][best_idx] * 100, log[3][best_idx] * 100))
-        print("k:{}, best acc: {:.2f}, fair: {:.2f}".format(k, log[2][best_idx] * 100, log[3][best_idx] * 100))
+
+        print("k:{}, best valid acc: {:.2f}, valid fair: {:.2f}".format(k, log[2][best_valid_idx] * 100, log[3][best_valid_idx] * 100))
+        print("k:{}, best test acc: {:.2f}, test fair: {:.2f}".format(k, log[4][best_test_idx] * 100, log[5][best_test_idx] * 100))
 
         #print("k:{}, best acc: {:.2f}, fair: {:.2f}".format(k, log[2][best_idx] * 100, log[3][best_idx] * 100))
 

@@ -73,7 +73,7 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
                 result.append(elem[0] / group_size[0] - elem[1] / group_size[1])
         else:
             for elem in zip(grad_0, grad_1):
-                result.append(elem[1] / group_size[1] - elem [0] / group_size[0])
+                result.append(elem[1] / group_size[1] - elem[0] / group_size[0])
                 
         if save == True:
             with open("{}_gradV_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
@@ -153,11 +153,11 @@ def calc_influence(z, t, s_test, model, dataset_size):
     
     return influence
 
-def calc_influence_dataset(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
+def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
     if load_s_test == True:
         with open("{}_s_test_avg_seed_{}.txt".format(_dataset, _seed), "rb") as fp:
             s_test_vec = pickle.load(fp)
-    else: s_test_vec = avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, recursion_depth, damp, scale, save=True)
+    else: s_test_vec = avg_s_test(model, s_test_dataloader, random_sampler, constraint, weights, r, _dataset, _seed, recursion_depth, damp, scale, save=True)
 
     influences = np.zeros(len(dataloader.dataset))
     torch.cuda.synchronize()

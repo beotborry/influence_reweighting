@@ -90,6 +90,7 @@ def main():
             
             if test_acc * 100 >= best_acc:
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
+                #torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
                 torch.save(model, './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
                 best_acc = test_acc * 100
 

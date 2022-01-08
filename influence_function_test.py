@@ -12,8 +12,8 @@ def get_grad_V(constraint, dataloader, model, _dataset, _seed, save=True):
 def get_avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, recursion_depth, save=True):
     avg_s_test(model=model, dataloader=dataloader, random_sampler=random_sampler, constraint=constraint, weights=weights, r=r, recursion_depth=recursion_depth, _dataset=_dataset, _seed=_seed, save=save)
 
-def get_influence_score(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth, r, load_s_test=True):
-    influences = calc_influence_dataset(model=model, dataloader=dataloader, random_sampler=random_sampler, constraint=constraint, weights=weights, recursion_depth=recursion_depth, r=r, _dataset=_dataset, _seed=_seed, load_s_test=load_s_test)
+def get_influence_score(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth, r, load_s_test=True):
+    influences = calc_influence_dataset(model=model, dataloader=dataloader, s_test_dataloader = s_test_dataloader, random_sampler=random_sampler, constraint=constraint, weights=weights, recursion_depth=recursion_depth, r=r, _dataset=_dataset, _seed=_seed, load_s_test=load_s_test)
 
     with open("{}_influence_score_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
         pickle.dump(influences, fp)
@@ -32,7 +32,6 @@ device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
 if torch.cuda.is_available(): torch.cuda.set_device(device)
 
 print(device)
-
 
 model = torch.load("./model/{}_resnet18_target_{}_seed_{}".format(dataset, target, seed))
 
@@ -59,7 +58,7 @@ if args.calc_option == "grad_V":
 elif args.calc_option == "s_test":
     get_avg_s_test(model, valid_loader, train_sampler, args.constraint, weights, r, dataset, seed, t, save=True)
 elif args.calc_option == "influence":
-    get_influence_score(model, valid_loader, train_sampler, args.constraint, weights, dataset, seed, t, r, load_s_test=True)
+    get_influence_score(model, train_loader, valid_loader, train_sampler, args.constraint, weights, dataset, seed, t, r, load_s_test=True)
 
 
 
