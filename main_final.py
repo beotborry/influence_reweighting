@@ -31,9 +31,7 @@ def main():
     if torch.cuda.is_available(): torch.cuda.set_device(device)
     print(device)
 
-
-    num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(dataset,
-                                                                                                    img_size=128,
+    num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(name=dataset,
                                                                                                     batch_size=128,
                                                                                                     seed=seed,
                                                                                                     num_workers=4,
@@ -126,7 +124,7 @@ def main():
         log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr,
                    test_fairness_metric_arr]
 
-        with open("./log/{}_seed_{}_naive_log2.txt".format(dataset, seed), "wb") as fp:
+        with open("./log/{}_seed_{}_naive_log.txt".format(dataset, seed), "wb") as fp:
             pickle.dump(log_arr, fp)
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ def get_avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _d
 def get_influence_score(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth, r, load_s_test=True):
     influences = calc_influence_dataset(model=model, dataloader=dataloader, s_test_dataloader = s_test_dataloader, random_sampler=random_sampler, constraint=constraint, weights=weights, recursion_depth=recursion_depth, r=r, _dataset=_dataset, _seed=_seed, load_s_test=load_s_test)
 
-    with open("{}_influence_score_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
+    with open("./influence_score/{}_influence_score_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
         pickle.dump(influences, fp)
 
 args = get_args()
