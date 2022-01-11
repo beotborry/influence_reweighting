@@ -1,1 +1,0 @@
-seed: 222, eta: 1.0, Trng Acc: 68.77, Trng Fairness Metric: 0.14, Test Acc: 68.89, Test Fairness Metric: 3.46, Tradeoff: 35.2038 

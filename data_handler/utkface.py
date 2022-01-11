@@ -1,13 +1,15 @@
 from os.path import join
-from torchvision.datasets.vision import VisionDataset
 from PIL import Image
 from utils import list_files
 from natsort import natsorted
+from collections import defaultdict
 import random
 import numpy as np
-from sklearn.model_selection import train_test_split
+import data_handler
+from torchvision import transforms
+from data_handler.get_mean_std import get_mean_std
 
-class UTKFaceDataset(VisionDataset):
+class UTKFaceDataset(data_handler.GenericDataset):
     
     label = 'age'
     sensi = 'race'
@@ -19,41 +21,49 @@ class UTKFaceDataset(VisionDataset):
     num_map = {
         'age' : 100,
         'gender' : 2,
-        'race' : 2
+        'race' : 4
     }
 
-    def __init__(self, root, split='train', transform=None, target_transform=None,
-                 labelwise=False):
+    def __init__(self, img_size=224, **kwargs):
+        mean, std = get_mean_std('utkface', group=kwargs['group_mode'])
+        if kwargs['split'] == 'train':
+            transform = transforms.Compose(
+                [transforms.Resize((256, 256)),
+                 transforms.RandomCrop(224),
+                 transforms.RandomHorizontalFlip(),
+                 transforms.ToTensor(),
+                 transforms.Normalize(mean=mean, std=std)]
+            )
+        elif kwargs['split'] == 'test':
+            transform = transforms.Compose(
+                [transforms.Resize((224, 224)),
+                 transforms.ToTensor(),
+                 transforms.Normalize(mean=mean, std=std)]
+            )        
+
+        super(UTKFaceDataset, self).__init__(transform=transform, **kwargs)
         
-        super(UTKFaceDataset, self).__init__(root, transform=transform,
-                                             target_transform=target_transform)
-        
-        self.split = split
-        self.filename = list_files(root, '.jpg')
-        self.filename = natsorted(self.filename)
-        self._delete_incomplete_images()
-        self._delete_others_n_age_filter()
+        # data pre processing
+        filename = list_files(self.root, '.jpg')
+        filename = natsorted(filename)
+        self._data_preprocessing(filename)
         self.num_groups = self.num_map[self.sensi]
         self.num_classes = self.num_map[self.label]        
-        self.labelwise = labelwise
         
-        random.seed(1)
-        random.shuffle(self.filename)
+        random.seed(1) # we want the same train /test set, so fix the seed to 1
+        random.shuffle(self.features)
         
-        self._make_data()
-        self.num_data = self._data_count()
-
-        if self.labelwise:
-            self.idx_map = self._make_idx_map()
-
-    def __len__(self):
-        return len(self.filename)
-
+        # split train & test
+        self.features = self._make_data(self.features, self.num_groups, self.num_classes)
+        self.num_data, self.idxs_per_group = self._data_count(self.features, self.num_groups, self.num_classes)
+        
+        # only for fairbatch... :(
+        self.labels, self.groups = self._make_SY()
+        
     def __getitem__(self, index):
-        if self.labelwise:
-            index = self.idx_map[index]
-        img_name = self.filename[index]
-        s, l = self._filename2SY(img_name)
+        if self.group_mode != -1:
+            index = self.idxs_per_group[self.group_mode][index]
+        s, l, img_name = self.features[index]
         
         image_path = join(self.root, img_name)
         image = Image.open(image_path, mode='r').convert('RGB')
@@ -63,37 +73,23 @@ class UTKFaceDataset(VisionDataset):
 
         return image, 1, np.float32(s), np.int64(l), (index, img_name)
     
-    def _make_idx_map(self):
-        idx_map = [[] for i in range(self.num_groups * self.num_classes)]
-        for j, i in enumerate(self.filename):
-            s, y = self._filename2SY(i)
-            pos = s*self.num_classes + y
-            idx_map[pos].append(j)
-            
-        final_map = []
-        for l in idx_map:
-            final_map.extend(l)
-        return final_map
+    def _make_SY(self):
+        labels = []
+        groups = []
+        for i in self.features:
+            img_name, s_, l_ = i
+            labels.append(l_)
+            groups.append(s_)
+        return labels, groups
 
-    def lg_filter(self, l, g):
-        tmp = []
-        for i in self.filename:
-            g_, l_ = self._filename2SY(i)
-            if l == l_ and g == g_:
-                tmp.append(i)
-        return tmp
-
-    def _delete_incomplete_images(self):
-        self.filename = [image for image in self.filename if len(image.split('_')) == 4]
-
-    def _delete_others_n_age_filter(self):
-
-        self.filename = [image for image in self.filename
-                         if ((image.split('_')[self.fea_map['race']] not in ('4', '3', '2')))]
-        ages = [self._transform_age(int(image.split('_')[self.fea_map['age']])) for image in self.filename]
-        
-        self.num_map['age'] = len(set(ages))
-
+    def _data_preprocessing(self, filenames):
+        filenames = self._delete_incomplete_images(filenames)
+        filenames = self._delete_others_n_age_filter(filenames)
+        self.features = [] 
+        for filename in filenames:
+            s, y = self._filename2SY(filename)
+            self.features.append([ s, y, filename])
+    
     def _filename2SY(self, filename):        
         tmp = filename.split('_')
         sensi = int(tmp[self.fea_map[self.sensi]])
@@ -103,9 +99,8 @@ class UTKFaceDataset(VisionDataset):
         if self.label == 'age':
             label = self._transform_age(label)
         return int(sensi), int(label)
-        
+    
     def _transform_age(self, age):
-        '''
         if age<20:
             label = 0
         elif age<40:
@@ -113,65 +108,16 @@ class UTKFaceDataset(VisionDataset):
         else:
             label = 2
         return label 
-        '''
-        if age <= 30:
-            label = 1
-        else: label = 0
-
-        return label
-
-    def _make_data(self):
-        # data_count = np.zeros((self.num_groups, self.num_classes), dype=int)
-
-        # for idx, filename in enumerate(self.filename):
-        #     s, l = self._filename2SY(filename)
-            
-
-
-
-        import copy
-        min_cnt = 200
-        data_count = np.zeros((self.num_groups, self.num_classes), dtype=int)
-        if self.split == 'train' or self.split == 'valid':
-            tmp = copy.deepcopy(self.filename)
-        else:
-            tmp = []
-            
-        for i in reversed(self.filename):
-            s, l = self._filename2SY(i)
-            data_count[s, l] += 1
-            if data_count[s, l] <= min_cnt:
-                if self.split =='train' or self.split == 'valid':
-                    tmp.remove(i)
-                else:
-                    tmp.append(i)
-
-        '''Todo add valid split code'''
         
-        # for filename in self.filename:
-        #     s, l = self._filename2SY(filename)
-        #     filename_grid[s][l].append(filename)
+    def _delete_incomplete_images(self, filename):
+        filename = [image for image in filename if len(image.split('_')) == 4]
+        return filename
 
-        pivot = int(len(tmp) * 0.8)
-        train_filename = tmp[:pivot]
-        valid_filename = tmp[pivot:]
-    
+    def _delete_others_n_age_filter(self, filename):
 
-        if self.split == 'train':
-            self.filename = train_filename
-        elif self.split == 'valid':
-            self.filename = valid_filename
-        elif self.split == 'test':
-            self.filename = tmp
-    def _data_count(self):
-        print(self.split)
-        data_count = np.zeros((self.num_groups, self.num_classes), dtype=int)
-        data_set = self.filename
+        filename = [image for image in filename
+                         if ((image.split('_')[self.fea_map['race']] != '4'))]
+        ages = [self._transform_age(int(image.split('_')[self.fea_map['age']])) for image in filename]
+        self.num_map['age'] = len(set(ages))
 
-        for img_name in data_set:
-            s, l = self._filename2SY(img_name)
-            data_count[s, l] += 1
-        
-        for i in range(self.num_groups):
-            print('# of %d group data : '%i, data_count[i, :])
-        return data_count
+        return filename

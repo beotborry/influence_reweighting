@@ -10,6 +10,7 @@ from influence_function_image import grad_V, s_test, calc_influence
 from utils_image import compute_confusion_matrix, calc_fairness_metric
 import pickle
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
+from mlp import MLP
 
 
 def main():
@@ -33,7 +34,7 @@ def main():
 
 ###########################################################
 
-    num_classes, num_groups, train_loader, test_loader, valid_loader = DataloaderFactory.get_dataloader(dataset, img_size=128,
+    num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(dataset, img_size=128,
                                                                                           batch_size=128, seed=seed,
                                                                                           num_workers=4,
                                                                                           target=target)
@@ -51,7 +52,14 @@ def main():
         valid_acc_arr = []
         valid_fairness_metric_arr = []
 
-        model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+        if dataset not in ('adult', 'compas'):
+            model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+        else: model = MLP(
+            feature_size = X_train.shape[1],
+            hidden_dim = 50,
+            num_classes = 2,
+            num_layer = 2
+        )
 
         optimizer = AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
         #optimizer = SGD(model.parameters(), lr=0.01, weight_decay=5e-4)
