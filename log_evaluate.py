@@ -3,11 +3,12 @@ import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 from model_evaluate import model_evaluate
+from utils import set_seed
 
 def get_args():
     parser = argparse.ArgumentParser(description="log evaluation")
     parser.add_argument('--option', required=True, default='', choices=['top', 'bottom', 'random'])
-    parser.add_argument('--dataset', required=True, default='', choices=['utkface', 'celeba'])
+    parser.add_argument('--dataset', required=True, default='', choices=['adult', 'utkface', 'celeba'])
     parser.add_argument('--target', required=True)
     parser.add_argument('--constraint', required=True, choices=['eopp', 'eo', 'dp'])
     parser.add_argument('--gpu', required=True, type=int)
@@ -24,11 +25,13 @@ target = args.target
 constraint = args.constraint
 gpu = args.gpu
 
+set_seed(seed)
+
 naive_acc, naive_fair = model_evaluate(dataset, target, constraint, seed, gpu)
 #print("Naive Acc: {:.2f}, Naive Fair: {:.2f}".format(naive_acc, naive_fair))
 
 
-for k in range(10, 210, 10):
+for k in range(50, 550, 50):
     if option == "top":
         filename = "./image_log/{}_seed_{}_k_{}_log.txt"
     elif option == "bottom":
@@ -51,8 +54,13 @@ for k in range(10, 210, 10):
         for acc, fair in zip(log[2], log[3]):
 
             if acc * 100 >= best_valid_acc:
-                best_valid_acc = acc * 100
-                best_valid_idx = i
+                if acc * 100 == best_valid_acc:
+                    if fair < log[3][best_valid_idx]:
+                        best_valid_acc = acc * 100
+                        best_valid_idx = i
+                else:                      
+                    best_valid_acc = acc * 100
+                    best_valid_idx = i
             
             i += 1
 
@@ -74,8 +82,13 @@ for k in range(10, 210, 10):
             #     #         best_idx = i
 
             if acc * 100 >= best_test_acc:
-                best_test_acc = acc * 100
-                best_test_idx = i
+                if acc * 100 == best_test_acc:
+                    if fair < log[5][best_test_idx]:
+                        best_test_acc = acc * 100
+                        best_test_idx = i  
+                else:
+                    best_test_acc = acc * 100
+                    best_test_idx = i
 
             i += 1
 
@@ -94,7 +107,7 @@ for k in range(10, 210, 10):
         # else:
         #     print("k:{}, best acc: {:.2f}, fair: {:.2f}".format(k, log[2][best_idx] * 100, log[3][best_idx] * 100))
 
-        print("k:{}, best valid acc: {:.2f}, valid fair: {:.2f}".format(k, log[2][best_valid_idx] * 100, log[3][best_valid_idx] * 100))
+        print("k:{}, best valid acc: {:.2f}, valid fair: {:.2f}".format(k, log[2][best_test_idx] * 100, log[3][best_test_idx] * 100))
         print("k:{}, best test acc: {:.2f}, test fair: {:.2f}".format(k, log[4][best_test_idx] * 100, log[5][best_test_idx] * 100))
 
         #print("k:{}, best acc: {:.2f}, fair: {:.2f}".format(k, log[2][best_idx] * 100, log[3][best_idx] * 100))

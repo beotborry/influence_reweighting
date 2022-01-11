@@ -5,6 +5,8 @@ from utils import get_accuracy
 from utils_image import compute_confusion_matrix, calc_fairness_metric
 import argparse
 from utils import set_seed
+from mlp import MLP
+from torch.utils.data import DataLoader
 
 def model_evaluate(dataset, target, fairness_constraint, seed, gpu):
     set_seed(seed)
@@ -13,12 +15,43 @@ def model_evaluate(dataset, target, fairness_constraint, seed, gpu):
     if torch.cuda.is_available(): torch.cuda.set_device(device)
     print(device)
 
+    if dataset == "adult":
+        if dataset == "adult":
+            from adult_dataloader import get_data
+            from adult_dataloader import Adult as CustomDataset
 
+        _X_train, _y_train, X_test, y_test, _protected_train, protected_test = get_data()
+        
+        pivot = int(len(_X_train) * 0.8)
+        X_train = _X_train[:pivot]
+        y_train = _y_train[:pivot]
+        protected_train = [_protected_train[0][:pivot], _protected_train[1][:pivot]]
+        
+        X_valid = _X_train[pivot:]
+        y_valid = _y_train[pivot:]
+        protected_valid = [_protected_train[0][pivot:], _protected_train[1][pivot:]]
 
-    model = torch.load("./model/{}_resnet18_target_{}_seed_{}".format(dataset, target, seed))
-    #model = torch.load("./model/celeba_resnet18_target_young")
+        X_train = torch.FloatTensor(X_train)
+        y_train = torch.LongTensor(y_train)
+        X_valid = torch.FloatTensor(X_valid)
+        y_valid = torch.LongTensor(y_valid)
+        X_test = torch.FloatTensor(X_test)
+        y_test = torch.LongTensor(y_test)
 
-    num_classes, num_groups, train_loader, test_loader, valid_loader = DataloaderFactory.get_dataloader(dataset, img_size=128, batch_size=128, seed=seed, num_workers=4, target=target)
+        train_dataset = CustomDataset(X_train, y_train, protected_train)
+        valid_dataset = CustomDataset(X_valid, y_valid, protected_valid)
+        test_dataset = CustomDataset(X_test, y_test, protected_test)
+
+        train_loader = DataLoader(train_dataset, batch_size = 128, shuffle= False, num_workers = 0)
+        valid_loader = DataLoader(valid_dataset, batch_size = 128, shuffle=False, num_workers = 0)
+        test_loader = DataLoader(test_dataset, batch_size = 128, shuffle=False, num_workers = 0)
+
+        model = torch.load("./model/{}_MLP_target_{}_seed_{}".format(dataset, target, seed))
+    else:
+        model = torch.load("./model/{}_resnet18_target_{}_seed_{}".format(dataset, target, seed))
+        #model = torch.load("./model/celeba_resnet18_target_young")
+
+        num_classes, num_groups, train_loader, test_loader, valid_loader = DataloaderFactory.get_dataloader(dataset, img_size=128, batch_size=128, seed=seed, num_workers=4, target=target)
 
     model.eval()
     test_acc = 0.0

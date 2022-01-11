@@ -135,3 +135,20 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.X_train[idx], self.y_train[idx], idx
+
+class Adult(Dataset):
+    def __init__(self, X_train_tensor, y_train_tensor, protected_arr):
+        self.X_train = X_train_tensor
+        self.y_train = y_train_tensor
+        self.protected_arr = protected_arr
+
+    def __len__(self):
+        return len(self.y_train)
+
+    def __getitem__(self, idx):
+        if self.protected_arr[0][idx] == 1:
+            s = 0
+        elif self.protected_arr[1][idx] == 1:
+            s = 1
+
+        return self.X_train[idx], 0, s, self.y_train[idx], (idx, 0)

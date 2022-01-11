@@ -62,7 +62,7 @@ def main():
     if method == "naive_leave_k_out":
         k = args.k
         top_k_idx = np.load("./leave_k_out_idx/naive_" + str(seed) + '_' + str(dataset) + '_' + str(fairness_constraint) + "_top" + str(k) + "_idx.npy")
-        
+        print(np.sort(top_k_idx))
         print("# of label 0: {}, # of label 1: {}".format(sum(y_train[top_k_idx]), k - sum(y_train[top_k_idx])))
         
         X_train = np.delete(X_train, top_k_idx, axis=0)

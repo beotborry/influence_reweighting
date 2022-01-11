@@ -114,7 +114,7 @@ class UTKFaceDataset(VisionDataset):
             label = 2
         return label 
         '''
-        if age <= 25:
+        if age <= 30:
             label = 1
         else: label = 0
 
@@ -147,9 +147,15 @@ class UTKFaceDataset(VisionDataset):
                     tmp.append(i)
 
         '''Todo add valid split code'''
+        
+        # for filename in self.filename:
+        #     s, l = self._filename2SY(filename)
+        #     filename_grid[s][l].append(filename)
+
         pivot = int(len(tmp) * 0.8)
         train_filename = tmp[:pivot]
         valid_filename = tmp[pivot:]
+    
 
         if self.split == 'train':
             self.filename = train_filename

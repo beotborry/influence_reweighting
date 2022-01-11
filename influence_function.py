@@ -27,6 +27,7 @@ def grad_z(z, t, model, gpu=-1):
     model.eval()
     if torch.cuda.is_available():
         z, t, model = z.cuda(), t.cuda(), model.cuda()
+
     y = model(z)
     if y.dim() == 1: y = y.view(1, 2)
 
@@ -48,12 +49,15 @@ def s_test(z_groups, t_groups, idxs, model, z_loader, constraint, weights, recur
     violation = calc_loss_diff(constraint, z_groups, t_groups, idxs, model)
 
     params = [p for p in model.parameters() if p.requires_grad]
-    v = list(grad(violation, params, create_graph=True))
+    v = list(grad(violation, params, create_graph=True)) 
     h_estimate = v.copy()
     for x, t, idx in z_loader:
         if torch.cuda.is_available():
             x, t, model, weights = x.cuda(), t.cuda(), model.cuda(), weights.cuda()
-        y = model(x) 
+        if x.dim() == 1: x = torch.unsqueeze(x, 0)
+        if t.dim() != 1: t = torch.unsqueeze(t, 0)
+        y = model(x)
+        if y.dim() == 1: y = y.view(1, 2)
         loss = weights[idx] * torch.nn.CrossEntropyLoss(reduction='none')(y, t)
         break
     for i in range(recursion_depth):

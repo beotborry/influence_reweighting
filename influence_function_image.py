@@ -6,6 +6,7 @@ import pickle
 from torch.autograd import grad
 
 def grad_z(z, t, model, gpu=-1):
+    if z.dim() == 1: z = torch.unsqueeze(z, 0)
     if z.dim() == 3: z = torch.unsqueeze(z, 0)
     if t.dim() != 1: t = t.view(1)
 
@@ -48,7 +49,6 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
                 mask = torch.logical_and(group_mask, label_mask)
                 with torch.no_grad():
                     losses[g] += torch.sum(loss[mask]).item()
-
                 if group_size[g] == 0 and g == 0: grad_0 = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
                 elif group_size[g] == 0 and g == 1: grad_1 = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
                 
@@ -66,7 +66,6 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
         print(group_size)
         losses[0] /= group_size[0]
         losses[1] /= group_size[1]
-        print(losses)
 
         if losses[0] > losses[1]:
             for elem in zip(grad_0, grad_1):
@@ -74,6 +73,7 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
         else:
             for elem in zip(grad_0, grad_1):
                 result.append(elem[1] / group_size[1] - elem[0] / group_size[0])
+
                 
         if save == True:
             with open("{}_gradV_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
@@ -164,6 +164,7 @@ def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler,
     for i, data in tqdm(enumerate(dataloader)):
         X, _, _, t, tup = data
         for X_elem, t_elem, idx in zip(X, t, tup[0]):
+            #print(X_elem, idx)
             influences[idx] = calc_influence(X_elem, t_elem, s_test_vec, model, len(dataloader.dataset)).cpu()
    
     return influences
