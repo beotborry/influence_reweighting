@@ -12,14 +12,14 @@ class DataloaderFactory:
     @staticmethod
     def get_dataloader(name, batch_size=128, seed=0, num_workers=4,
                        target='Attractive', labelwise=False, group_mode=-1, drop_last=True, sen_attr='sex', skew_ratio=0.8,
-                       alpha=None, target_fairness=None):
+                       alpha=None, target_fairness=None, influence_scores=None):
 
         test_dataset = DatasetFactory.get_dataset(name, split='test', target=target,
-                                                  group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio)
+                                                  group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio, influence_scores=influence_scores)
         train_dataset = DatasetFactory.get_dataset(name, split='train', target=target,
-                                                   group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio)
+                                                   group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio, influence_scores=influence_scores)
         valid_dataset = DatasetFactory.get_dataset(name, split='valid', target=target,
-                                                   group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio)
+                                                   group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio, influence_scores=influence_scores)
 
         print('# data of test ',  len(test_dataset))
         print('# data of train ', len(train_dataset))
@@ -44,13 +44,13 @@ class DataloaderFactory:
             shuffle = False
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler,
                                       shuffle=shuffle, num_workers=num_workers, worker_init_fn=_init_fn,
-                                      pin_memory=True, drop_last=drop_last)
+                                      pin_memory=True, drop_last=False)
         valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, sampler=sampler,
                                       shuffle=shuffle, num_workers=num_workers, worker_init_fn=_init_fn,
-                                      pin_memory=True, drop_last=drop_last)
+                                      pin_memory=True, drop_last=False)
 
         test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
-                                     num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True)
+                                     num_workers=num_workers, worker_init_fn=_init_fn, pin_memory=True, drop_last=False)
 
         print('Dataset loaded.')
         

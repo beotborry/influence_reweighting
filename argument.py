@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument('--iteration', required=True, default=0, type=int)
     parser.add_argument('--scaler', default=None, type=float)
     parser.add_argument('--eta', default=None, type=float)
-    parser.add_argument('--k', default=0, type=int)
+    parser.add_argument('--k', default=0, type=float)
     parser.add_argument('--term', default=1, type=int)
     parser.add_argument('--r', default = None, type=int)
     parser.add_argument('--t', default = None, type=int)
@@ -22,6 +22,7 @@ def get_args():
     parser.add_argument('--idx_save', default=0, type=int)
     parser.add_argument('--model_save', default=0, type=int)
     parser.add_argument('--target', default=None)
+    parser.add_argument('--sen_attr', default='sex')
 
     args = parser.parse_args()
 

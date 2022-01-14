@@ -1,3 +1,4 @@
+from typing import KeysView
 import numpy as np
 import pandas as pd
 
@@ -17,6 +18,15 @@ class TabularDataset(data_handler.GenericDataset):
         
         dataset_train, dataset_test = dataset.split([0.8], shuffle=True, seed=0)
         dataset_train, dataset_valid = dataset_train.split([0.8], shuffle=True, seed=0)
+        
+        # for leave out training
+        if  self.split == 'train' and len(kwargs['influence_scores']) != 0:
+            train_idx = np.arange(0, len(dataset_train.features))
+            train_idx = np.delete(train_idx, kwargs['influence_scores'])
+            dataset_train = dataset_train.subset(train_idx)
+
+            print("Removed {} data from train dataset!".format(len(kwargs['influence_scores'])))
+
         # features, labels = self._balance_test_set(dataset)
         # self.dataset = dataset_train if self.split == 'train' else dataset_test
         if self.split == 'train': self.dataset = dataset_train

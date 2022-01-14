@@ -31,6 +31,7 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
 
         for i, data in tqdm(enumerate(dataloader)):
             inputs, _, groups, targets, _ = data
+
             labels = targets
             groups = groups.long()
 
@@ -43,12 +44,14 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
             group_element = list(torch.unique(groups).numpy())
             for g in group_element:
 
-                group_mask = groups == g
-                label_mask = targets == 1
+                group_mask = (groups == g).cuda()
+                label_mask = (labels == 1).cuda()
 
                 mask = torch.logical_and(group_mask, label_mask)
+
                 with torch.no_grad():
                     losses[g] += torch.sum(loss[mask]).item()
+
                 if group_size[g] == 0 and g == 0: grad_0 = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
                 elif group_size[g] == 0 and g == 1: grad_1 = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
                 
@@ -61,7 +64,7 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
                     for i in range(len(grad_1)):
                         grad_1[i] += curr[i]
 
-                group_size[g] += len(loss[mask])
+                group_size[g] += sum(mask).item()
 
         print(group_size)
         losses[0] /= group_size[0]
