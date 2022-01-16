@@ -47,7 +47,13 @@ def calc_fairness_metric(constraint, confu_mat, num_groups=2, num_classes=2):
     if constraint == 'eopp':
         group0_tn, group0_fp, group0_fn, group0_tp = confu_mat['0'].ravel()
         group1_tn, group1_fp, group1_fn, group1_tp = confu_mat['1'].ravel()
-        return abs(group0_tp / (group0_fn + group0_tp) - group1_tp / (group1_fn + group1_tp))
+
+        pivot = (group0_tp + group1_tp) / (group0_fn + group0_tp + group1_fn + group1_tp)
+        group0_tpr = group0_tp / (group0_fn + group0_tp)
+        group1_tpr = group1_tp / (group1_fn + group1_tp)
+
+        return max(abs(group0_tpr - pivot), abs(group1_tpr - pivot))
+        #return abs(group0_tp / (group0_fn + group0_tp) - group1_tp / (group1_fn + group1_tp))
 
     elif constraint == 'eo':
         '''
