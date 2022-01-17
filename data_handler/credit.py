@@ -1,4 +1,6 @@
-from data_handler.tabular_classes.credit_dataset import CreditDataset
+import pandas as pd
+from data_handler.AIF360.credit_dataset import CreditDataset
+#from data_handler.tabular_classes.credit_dataset import CreditDataset
 from data_handler.tabular_dataset import TabularDataset
 
 

@@ -21,7 +21,7 @@ def grad_z(z, t, model, gpu=-1):
     params = [p for p in model.parameters() if p.requires_grad]
     return list(grad(loss, params, retain_graph=True))
 
-def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
+def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, save=False):
     params = [p for p in model.parameters() if p.requires_grad]
     if torch.cuda.is_available(): model = model.cuda()
     if constraint == 'eopp':
@@ -79,19 +79,19 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, save=False):
 
                 
         if save == True:
-            with open("./influence_score/{}_gradV_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
+            with open("./influence_score/{}_gradV_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
                 pickle.dump(result, fp)
         else:
             return result
 
-def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False):
+def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False):
     model.eval()
 
     if load_gradV == False:
          v = grad_V(constraint, dataloader, model, _dataset, _seed, save=False)
     else:
         #grad_V(constraint, dataloader, model, save=True)
-        with open("./influence_score/{}_gradV_seed_{}.txt".format(_dataset, _seed), "rb") as fp:
+        with open("./influence_score/{}_gradV_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
             v = pickle.load(fp)
 
     h_estimate = v.copy()
@@ -117,22 +117,22 @@ def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _se
                 for _v, _h_e, _hv in zip(v, h_estimate, hv)]
 
     if save == True:
-        with open("./influence_score/{}_s_test_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
+        with open("./influence_score/{}_s_test_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
             pickle.dump(h_estimate, fp)
 
     return h_estimate
 
-def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, recursion_depth=100, damp=0.01, scale=500.0, save=True):
+def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, recursion_depth=100, damp=0.01, scale=500.0, save=True):
 
-    all = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth, damp, scale, load_gradV=True, save=False)
+    all = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth, damp, scale, load_gradV=True, save=False)
 
     for i in tqdm(range(1, r)):
-        cur = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth, damp, scale, load_gradV=True, save=False)
+        cur = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth, damp, scale, load_gradV=True, save=False)
         all = [a + c for a, c in zip(all, cur)]
 
     all = [a / r for a in all]
     if save == True:
-        with open("./influence_score/{}_s_test_avg_seed_{}.txt".format(_dataset, _seed), "wb") as fp:
+        with open("./influence_score/{}_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
             pickle.dump(all, fp)
     return all
 
@@ -156,11 +156,11 @@ def calc_influence(z, t, s_test, model, dataset_size):
     
     return influence
 
-def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
+def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
     if load_s_test == True:
-        with open("./influence_score/{}_s_test_avg_seed_{}.txt".format(_dataset, _seed), "rb") as fp:
+        with open("./influence_score/{}_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
             s_test_vec = pickle.load(fp)
-    else: s_test_vec = avg_s_test(model, s_test_dataloader, random_sampler, constraint, weights, r, _dataset, _seed, recursion_depth, damp, scale, save=True)
+    else: s_test_vec = avg_s_test(model, s_test_dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, recursion_depth, damp, scale, save=True)
 
     influences = np.zeros(len(dataloader.dataset))
     torch.cuda.synchronize()

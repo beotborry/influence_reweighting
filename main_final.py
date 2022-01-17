@@ -55,7 +55,7 @@ def main():
                                                                                                     influence_scores=[],
                                                                                                     sen_attr=sen_attr)
 
-        with open("./influence_score/{}_influence_score_seed_{}.txt".format(dataset, seed), "rb") as fp:
+        with open("./influence_score/{}_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
             influences = np.array(pickle.load(fp))
 
         pivot = int(train_dataset_length[dataset] * (k / 100.0))
@@ -102,7 +102,7 @@ def main():
             num_layer=2
         )
         optimizer = SGD(model.parameters(), lr=0.03, weight_decay=5e-4)
-
+        scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, verbose=True)
     criterion = nn.CrossEntropyLoss(reduction='none')
 
     if method == 'naive':
@@ -171,11 +171,13 @@ def main():
             test_fair = calc_fairness_metric(args.constraint, confu_mat_test)
             test_fairness_metric_arr.append(test_fair)
 
+            scheduler.step(test_acc)
+
             if test_acc * 100 >= best_acc:
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
-                if dataset not in ('adult', 'compas', 'bank'): torch.save(model, './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
-                else: torch.save(model, './model/{}_MLP_target_{}_seed_{}'.format(dataset, target, seed))
+                if dataset not in ('adult', 'compas', 'bank'): torch.save(model, './model/{}_resnet18_target_{}_seed_{}_sen_attr_{}'.format(dataset, target, seed, sen_attr))
+                else: torch.save(model, './model/{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(dataset, target, seed, sen_attr))
 
                 best_acc = test_acc * 100
 
@@ -184,7 +186,7 @@ def main():
         log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr,
                    test_fairness_metric_arr]
 
-        with open("./log/{}_seed_{}_naive_log.txt".format(dataset, seed), "wb") as fp:
+        with open("./log/{}_seed_{}_sen_attr_{}_naive_log.txt".format(dataset, seed, sen_attr), "wb") as fp:
             pickle.dump(log_arr, fp)
 
     elif method == "naive_leave_k_out":
@@ -234,6 +236,7 @@ def main():
 
             confu_mat_test = [confu_mat_test['0'], confu_mat_test['1']]
             print("Test Acc: {:.2f}, Test fairness metric: {:.2f}".format(test_acc * 100, test_fairness_metric * 100))
+            scheduler.step(test_acc)
 
             test_acc_arr.append(test_acc.item())
             test_fairness_metric_arr.append(test_fairness_metric)
@@ -262,13 +265,13 @@ def main():
 
         acc_fair_log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
-        with open("./log/{}_seed_{}_k_{}_acc_fair_log.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./log/{}_seed_{}_k_{}_sen_attr_{}_acc_fair_log.txt".format(dataset, seed, k,sen_attr), "wb") as fp:
             pickle.dump(acc_fair_log_arr, fp)
 
-        with open("./log/{}_seed_{}_k_{}_removed_data_info.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./log/{}_seed_{}_k_{}_sen_attr_{}_removed_data_info.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(removed_data_log, fp)
         
-        with open("./log/{}_seed_{}_k_{}_confusion_matrix.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./log/{}_seed_{}_k_{}_sen_attr_{}_confusion_matrix.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(confu_mat_arr, fp)
     
     elif method == "naive_leave_bottom_k_out":
@@ -318,6 +321,7 @@ def main():
 
             confu_mat_test = [confu_mat_test['0'], confu_mat_test['1']]
             print("Test Acc: {:.2f}, Test fairness metric: {:.2f}".format(test_acc * 100, test_fairness_metric * 100))
+            scheduler.step(test_acc)
 
             test_acc_arr.append(test_acc.item())
             test_fairness_metric_arr.append(test_fairness_metric)
@@ -347,13 +351,13 @@ def main():
 
         acc_fair_log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
-        with open("./log/{}_seed_{}_bottom_k_{}_acc_fair_log.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./log/{}_seed_{}_bottom_k_{}_sen_attr_{}_acc_fair_log.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(acc_fair_log_arr, fp)
 
-        with open("./log/{}_seed_{}_bottom_k_{}_removed_data_info.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./log/{}_seed_{}_bottom_k_{}_sen_attr_{}_removed_data_info.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(removed_data_log, fp)
         
-        with open("./log/{}_seed_{}_bottom_k_{}_confusion_matrix.txt".format(dataset, seed, k), "wb") as fp:
+        with open("./log/{}_seed_{}_bottom_k_{}_sen_attr_{}_confusion_matrix.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(confu_mat_arr, fp)
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ class CreditDataset(StandardDataset):
     See :file:`aif360/data/raw/bank/README.md`.
     """
 
-    def __init__(self, root_dir='./data/credit', label_name='default payment next month', favorable_classes=[1],
+    def __init__(self, root_dir='./data/credit', label_name='default.payment.next.month', favorable_classes=[1],
                  protected_attribute_names=['SEX'],
                  privileged_classes=[lambda x: x == 1],
                  instance_weights_name=None,

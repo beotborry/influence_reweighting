@@ -10,6 +10,7 @@ dataset_dict = {'utkface' : ['data_handler.utkface','UTKFaceDataset'],
                 'bank' : ['data_handler.bank', 'BankDataset_torch'],
                 'cifar10s' : ['data_handler.cifar10s', 'CIFAR10_S'],
                 'cifar10cg' : ['data_handler.cifar10s', 'CIFAR10_CG'],
+                'credit' : ['data_handler.credit', 'CreditDataset_torch']
                }
 
 class DatasetFactory:
