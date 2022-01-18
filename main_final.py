@@ -101,7 +101,8 @@ def main():
             num_classes=2,
             num_layer=2
         )
-        optimizer = SGD(model.parameters(), lr=0.03, weight_decay=5e-4)
+        #optimizer = SGD(model.parameters(), lr=0.03, weight_decay=5e-4)
+        optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=1e-3)
         scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, verbose=True)
     criterion = nn.CrossEntropyLoss(reduction='none')
 
