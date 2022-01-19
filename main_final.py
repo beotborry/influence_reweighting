@@ -60,7 +60,13 @@ def main():
 
         pivot = int(train_dataset_length[dataset] * (k / 100.0))
         if method == 'naive_leave_k_out':
-            remove_idx = np.argpartition(influences, -pivot)[-pivot:]
+            with open("./influence_score/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
+                influences_val_loss = np.array(pickle.load(fp))
+
+            fair_top = np.argpartition(influences, -pivot)[-pivot:]
+            val_loss_top = np.argpartition(influences_val_loss, -pivot)[-pivot:]
+            remove_idx = np.intersect1d(fair_top, val_loss_top)
+            #remove_idx = np.argpartition(influences, -pivot)[-pivot:]
         elif method == 'naive_leave_bottom_k_out':
             remove_idx = np.argpartition(influences, pivot)[:pivot]
 

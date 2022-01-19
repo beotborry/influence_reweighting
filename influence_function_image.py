@@ -41,11 +41,21 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, save=False
             outputs = model(inputs)
             loss = nn.CrossEntropyLoss(reduction='none')(outputs, labels)
 
+            if i == 0:
+                grad_val_loss = list(grad(torch.sum(loss), params, retain_graph=True))
+            elif i > 0:
+                curr = list(grad(torch.sum(loss), params, retain_graph=True))
+                for idx in range(len(grad_val_loss)):
+                    grad_val_loss[idx] += curr[idx]
+
             group_element = list(torch.unique(groups).numpy())
             for g in group_element:
 
-                group_mask = (groups == g).cuda()
-                label_mask = (labels == 1).cuda()
+                group_mask = (groups == g)
+                label_mask = (labels == 1)
+                if torch.cuda.is_available():
+                    group_mask = group_mask.cuda()
+                    label_mask = label_mask.cuda()
 
                 mask = torch.logical_and(group_mask, label_mask)
 
@@ -57,12 +67,12 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, save=False
                 
                 if group_size[g] != 0 and g == 0: 
                     curr = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
-                    for i in range(len(grad_0)):
-                        grad_0[i] += curr[i]
+                    for idx in range(len(grad_0)):
+                        grad_0[idx] += curr[idx]
                 elif group_size[g] != 0 and g == 1:
                     curr = list(grad(torch.sum(loss[mask]), params, retain_graph=True))
-                    for i in range(len(grad_1)):
-                        grad_1[i] += curr[i]
+                    for idx in range(len(grad_1)):
+                        grad_1[idx] += curr[idx]
 
                 group_size[g] += sum(mask).item()
 
@@ -77,22 +87,30 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, save=False
             for elem in zip(grad_0, grad_1):
                 result.append(elem[1] / group_size[1] - elem[0] / group_size[0])
 
+        for elem in grad_val_loss:
+            elem /= len(dataloader.dataset)
                 
         if save == True:
+            with open("./influence_score/{}_val_loss_gradV_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
+                pickle.dump(grad_val_loss, fp)
+
             with open("./influence_score/{}_gradV_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
                 pickle.dump(result, fp)
         else:
             return result
 
-def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False):
+def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, option='fair', recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False):
     model.eval()
 
     if load_gradV == False:
          v = grad_V(constraint, dataloader, model, _dataset, _seed, save=False)
     else:
-        #grad_V(constraint, dataloader, model, save=True)
-        with open("./influence_score/{}_gradV_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
-            v = pickle.load(fp)
+        if option == 'fair':
+            with open("./influence_score/{}_gradV_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
+                v = pickle.load(fp)
+        elif option == 'val_loss':
+            with open("./influence_score/{}_val_loss_gradV_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
+                v = pickle.load(fp)
 
     h_estimate = v.copy()
     
@@ -117,23 +135,31 @@ def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _se
                 for _v, _h_e, _hv in zip(v, h_estimate, hv)]
 
     if save == True:
-        with open("./influence_score/{}_s_test_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
-            pickle.dump(h_estimate, fp)
+        if option == 'fair':
+            with open("./influence_score/{}_s_test_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
+                pickle.dump(h_estimate, fp)
+        elif option == 'val_loss':
+            with open("./influence_score/{}_val_loss_s_test_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
+                pickle.dump(h_estimate, fp)
 
     return h_estimate
 
-def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, recursion_depth=100, damp=0.01, scale=500.0, save=True):
+def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, option='fair', recursion_depth=100, damp=0.01, scale=500.0, save=True):
 
-    all = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth, damp, scale, load_gradV=True, save=False)
+    all = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, option, recursion_depth, damp, scale, load_gradV=True, save=False)
 
     for i in tqdm(range(1, r)):
-        cur = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth, damp, scale, load_gradV=True, save=False)
+        cur = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, option, recursion_depth, damp, scale, load_gradV=True, save=False)
         all = [a + c for a, c in zip(all, cur)]
 
     all = [a / r for a in all]
     if save == True:
-        with open("./influence_score/{}_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
-            pickle.dump(all, fp)
+        if option == 'fair':
+            with open("./influence_score/{}_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
+                pickle.dump(all, fp)
+        elif option == 'val_loss':
+            with open("./influence_score/{}_val_loss_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "wb") as fp:
+                pickle.dump(all, fp)
     return all
 
 
@@ -156,10 +182,15 @@ def calc_influence(z, t, s_test, model, dataset_size):
     
     return influence
 
-def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
+def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, option='fair', recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True):
     if load_s_test == True:
-        with open("./influence_score/{}_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
-            s_test_vec = pickle.load(fp)
+        if option == 'fair':
+            with open("./influence_score/{}_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
+                s_test_vec = pickle.load(fp)
+        elif option == 'val_loss':
+            with open("./influence_score/{}_val_loss_s_test_avg_seed_{}_sen_attr_{}.txt".format(_dataset, _seed, _sen_attr), "rb") as fp:
+                s_test_vec = pickle.load(fp)
+
     else: s_test_vec = avg_s_test(model, s_test_dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, recursion_depth, damp, scale, save=True)
 
     influences = np.zeros(len(dataloader.dataset))

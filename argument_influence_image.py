@@ -9,6 +9,7 @@ def get_args():
     parser.add_argument('--constraint', required=True, default='', choices=['dp', 'eo', 'eopp'])
     parser.add_argument('--calc_option', required=True, default='', choices=['grad_V', 's_test', 'influence'])
     parser.add_argument('--seed', required=True, type=int)
+    parser.add_argument('--option', required=True)
 
     parser.add_argument('--r', default = None, type=int)
     parser.add_argument('--t', default = None, type=int)
