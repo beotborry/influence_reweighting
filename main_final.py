@@ -68,7 +68,13 @@ def main():
             remove_idx = np.intersect1d(fair_top, val_loss_top)
             #remove_idx = np.argpartition(influences, -pivot)[-pivot:]
         elif method == 'naive_leave_bottom_k_out':
-            remove_idx = np.argpartition(influences, pivot)[:pivot]
+            with open("./influence_score/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
+                influences_val_loss = np.array(pickle.load(fp))
+
+            fair_bottom = np.argpartition(influences, pivot)[:pivot]
+            val_loss_bottom = np.argpartition(influences_val_loss, pivot)[:pivot]
+            remove_idx = np.intersect1d(fair_bottom, val_loss_bottom)
+            #remove_idx = np.argpartition(influences, pivot)[:pivot]
 
         removed_data_log = np.zeros((num_groups, num_classes))
         for idx in remove_idx:
