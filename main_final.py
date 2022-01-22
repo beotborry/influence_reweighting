@@ -9,7 +9,7 @@ from tqdm import tqdm
 from influence_function_image import grad_V, s_test, calc_influence
 from utils_image import compute_confusion_matrix, calc_fairness_metric
 import pickle
-from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR, StepLR
 from mlp import MLP
 
 
@@ -120,7 +120,8 @@ def main():
             model = torch.load("./model/{}_MLP_target_{}_seed_{}_sen_attr_{}".format(dataset, target, seed, sen_attr))
         #optimizer = SGD(model.parameters(), lr=0.03, weight_decay=5e-4)
         optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=1e-3)
-        scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, verbose=True)
+        #scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, verbose=True)
+        scheduler = StepLR(optimizer, step_size=30, gamma=0.1, verbose=True)
     criterion = nn.CrossEntropyLoss(reduction='none')
 
     if method == 'naive':
@@ -189,8 +190,8 @@ def main():
             test_fair = calc_fairness_metric(args.constraint, confu_mat_test)
             test_fairness_metric_arr.append(test_fair)
 
-            scheduler.step(test_acc)
-
+            #scheduler.step(test_acc)
+            scheduler.step()
             if test_acc * 100 >= best_acc:
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
@@ -254,7 +255,9 @@ def main():
 
             confu_mat_test = [confu_mat_test['0'], confu_mat_test['1']]
             print("Test Acc: {:.2f}, Test fairness metric: {:.2f}".format(test_acc * 100, test_fairness_metric * 100))
-            scheduler.step(test_acc)
+            
+            #scheduler.step(test_acc)
+            scheduler.step()
 
             test_acc_arr.append(test_acc.item())
             test_fairness_metric_arr.append(test_fairness_metric)
@@ -339,7 +342,8 @@ def main():
 
             confu_mat_test = [confu_mat_test['0'], confu_mat_test['1']]
             print("Test Acc: {:.2f}, Test fairness metric: {:.2f}".format(test_acc * 100, test_fairness_metric * 100))
-            scheduler.step(test_acc)
+            #scheduler.step(test_acc)
+            scheduler.step()
 
             test_acc_arr.append(test_acc.item())
             test_fairness_metric_arr.append(test_fairness_metric)
