@@ -29,6 +29,7 @@ def main():
     epoch = args.epoch
     target = args.target
     sen_attr = args.sen_attr
+    fine_tuning = args.fine_tuning
 
     device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
     if torch.cuda.is_available(): torch.cuda.set_device(device)
@@ -107,12 +108,16 @@ def main():
         if dataset == 'adult': feature_size = 97
         elif dataset == 'compas': feature_size = 400
         elif dataset == 'bank': feature_size = 56
-        model = MLP(
-            feature_size=feature_size,
-            hidden_dim=50,
-            num_classes=2,
-            num_layer=2
-        )
+
+        if fine_tuning == 0:
+            model = MLP(
+                feature_size=feature_size,
+                hidden_dim=50,
+                num_classes=2,
+                num_layer=2
+            )
+        elif fine_tuning == 1:
+            model = torch.load("./model/{}_MLP_target_{}_seed_{}_sen_attr_{}".format(dataset, target, seed, sen_attr))
         #optimizer = SGD(model.parameters(), lr=0.03, weight_decay=5e-4)
         optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=1e-3)
         scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, verbose=True)

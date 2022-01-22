@@ -23,6 +23,7 @@ def get_args():
     parser.add_argument('--model_save', default=0, type=int)
     parser.add_argument('--target', default=None)
     parser.add_argument('--sen_attr', default='sex')
+    parser.add_argument('--fine_tuning', required=True, type=int)
 
     args = parser.parse_args()
 
