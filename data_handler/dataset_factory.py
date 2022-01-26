@@ -26,7 +26,7 @@ class DatasetFactory:
                   'split':split,
                   'group_mode':group_mode,
                   'influence_scores':influence_scores}
-        tabular_datas = ['adult','compas', 'credit', 'bank']
+        tabular_datas = ['adult','compas', 'credit', 'bank', 'retiring_adult']
         if name in tabular_datas:
             kwargs['sen_attr'] = sen_attr
         if name == 'celeba':

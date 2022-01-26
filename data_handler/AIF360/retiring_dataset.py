@@ -18,7 +18,7 @@ class RetiringDataset(StandardDataset):
     def __init__(self, root_dir='./data/retiring_adult/',
                  label_name='PINCP',
                  favorable_classes=[True],
-                 protected_attribute_names=['SEX'],
+                 protected_attribute_names=['RAC1P'],
                  privileged_classes=[[1]],
                  instance_weights_name=None,
                  categorical_features=[],
