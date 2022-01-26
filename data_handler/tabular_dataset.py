@@ -62,7 +62,8 @@ class TabularDataset(data_handler.GenericDataset):
         features = self.features[idx]
         group = features[0]
         label = features[1]
-        feature = features[2:]
+        #feature = features[2:]
+        feature = np.append(features[2:], group)
 
 #         if self.transform:
 #             feature = self.transform(feature)

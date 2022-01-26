@@ -92,12 +92,13 @@ class RetiringDataset(StandardDataset):
             df = df[df['PINCP'] > 100]
             df = df[df['WKHP'] > 0]
             df = df[df['PWGTP'] >= 1]
+            df = df[df['RAC1P'] <= 2]
 
             target_transform = lambda x: x > 50000
             df['PINCP'] = target_transform(df['PINCP'])
 
             group_transform = lambda x: x == 1
-            df['SEX'] = group_transform(df['SEX'])
+            df['RAC1P'] = group_transform(df['RAC1P'])
             df.to_csv("./data/retiring_adult/retiring_adult.csv", sep=',', index=False, columns=column_names)
 
             import sys

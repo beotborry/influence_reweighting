@@ -15,7 +15,7 @@ from mlp import MLP
 
 def main():
 ############### parisng argument ##########################
-    train_dataset_length = {'adult':28941, 'compas': 3946, 'bank': 19512, 'retiring_adult': 1065280}
+    train_dataset_length = {'adult':28941, 'compas': 3946, 'bank': 19512, 'retiring_adult': 925247}
     tabular_dataset = ['adult', 'compas', 'bank', 'retiring_adult']
     
     args = get_args()
@@ -31,6 +31,7 @@ def main():
     target = args.target
     sen_attr = args.sen_attr
     fine_tuning = args.fine_tuning
+    option = args.main_option
 
     device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
     if torch.cuda.is_available(): torch.cuda.set_device(device)
@@ -57,27 +58,36 @@ def main():
                                                                                                     influence_scores=[],
                                                                                                     sen_attr=sen_attr)
 
-        with open("./influence_score/{}_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
+        with open("./influence_score/{}/{}_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, seed, sen_attr), "rb") as fp:
             influences = np.array(pickle.load(fp))
 
         pivot = int(train_dataset_length[dataset] * (k / 100.0))
         if method == 'naive_leave_k_out':
-            with open("./influence_score/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
-                influences_val_loss = np.array(pickle.load(fp))
-
             fair_top = np.argpartition(influences, -pivot)[-pivot:]
-            val_loss_top = np.argpartition(influences_val_loss, -pivot)[-pivot:]
-            remove_idx = np.intersect1d(fair_top, val_loss_top)
-            #remove_idx = np.argpartition(influences, -pivot)[-pivot:]
+               
+            if option == 'intersect' or option == 'intersect_fine_tuning':
+                with open("./influence_score/{}/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, seed, sen_attr), "rb") as fp:
+                    influences_val_loss = np.array(pickle.load(fp))
+                            
+                val_loss_top = np.argpartition(influences_val_loss, -pivot)[-pivot:]
+                remove_idx = np.intersect1d(fair_top, val_loss_top)
+            else: remove_idx = fair_top
+    
+
         elif method == 'naive_leave_bottom_k_out':
-            with open("./influence_score/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
-                influences_val_loss = np.array(pickle.load(fp))
-
+          
             fair_bottom = np.argpartition(influences, pivot)[:pivot]
-            val_loss_bottom = np.argpartition(influences_val_loss, pivot)[:pivot]
-            remove_idx = np.intersect1d(fair_bottom, val_loss_bottom)
-            #remove_idx = np.argpartition(influences, pivot)[:pivot]
+                     
+            if option == 'intersect' or option == 'intersect_fine_tuning':
+                with open("./influence_score/{}/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, seed, sen_attr), "rb") as fp:
+                    influences_val_loss = np.array(pickle.load(fp))
+                    
+                val_loss_bottom = np.argpartition(influences_val_loss, pivot)[:pivot]
 
+
+                remove_idx = np.intersect1d(fair_bottom, val_loss_bottom)
+            else: remove_idx = fair_bottom
+           
         removed_data_log = np.zeros((num_groups, num_classes))
         for idx in remove_idx:
             _, _, g, l, _ = train_loader.dataset[idx]
@@ -107,10 +117,10 @@ def main():
         model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
         optimizer = AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
     else:
-        if dataset == 'adult': feature_size = 97
-        elif dataset == 'compas': feature_size = 400
-        elif dataset == 'bank': feature_size = 56
-        elif dataset == 'retiring_adult': feature_size = 9
+        if dataset == 'adult': feature_size = 98
+        elif dataset == 'compas': feature_size = 401
+        elif dataset == 'bank': feature_size = 57
+        elif dataset == 'retiring_adult': feature_size = 10
 
         if fine_tuning == 0:
             model = MLP(
@@ -120,7 +130,7 @@ def main():
                 num_layer=2
             )
         elif fine_tuning == 1:
-            model = torch.load("./model/{}_MLP_target_{}_seed_{}_sen_attr_{}".format(dataset, target, seed, sen_attr))
+            model = torch.load("./model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}".format(option, dataset, target, seed, sen_attr))
         #optimizer = SGD(model.parameters(), lr=0.03, weight_decay=5e-4)
         optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=1e-3)
         #scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, verbose=True)
@@ -199,7 +209,7 @@ def main():
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
                 if dataset not in tabular_dataset: torch.save(model, './model/{}_resnet18_target_{}_seed_{}_sen_attr_{}'.format(dataset, target, seed, sen_attr))
-                else: torch.save(model, './model/{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(dataset, target, seed, sen_attr))
+                else: torch.save(model, './model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, target, seed, sen_attr))
 
                 best_acc = test_acc * 100
 
@@ -208,7 +218,7 @@ def main():
         log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr,
                    test_fairness_metric_arr]
 
-        with open("./log/{}_seed_{}_sen_attr_{}_naive_log.txt".format(dataset, seed, sen_attr), "wb") as fp:
+        with open("./log/{}/{}_seed_{}_sen_attr_{}_naive_log.txt".format(option, dataset, seed, sen_attr), "wb") as fp:
             pickle.dump(log_arr, fp)
 
     elif method == "naive_leave_k_out":
@@ -289,13 +299,13 @@ def main():
 
         acc_fair_log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
-        with open("./log/{}_seed_{}_k_{}_sen_attr_{}_acc_fair_log.txt".format(dataset, seed, k,sen_attr), "wb") as fp:
+        with open("./log/{}/{}_seed_{}_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, seed, k,sen_attr), "wb") as fp:
             pickle.dump(acc_fair_log_arr, fp)
 
-        with open("./log/{}_seed_{}_k_{}_sen_attr_{}_removed_data_info.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
+        with open("./log/{}/{}_seed_{}_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(removed_data_log, fp)
         
-        with open("./log/{}_seed_{}_k_{}_sen_attr_{}_confusion_matrix.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
+        with open("./log/{}/{}_seed_{}_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(confu_mat_arr, fp)
     
     elif method == "naive_leave_bottom_k_out":
@@ -376,13 +386,13 @@ def main():
 
         acc_fair_log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
-        with open("./log/{}_seed_{}_bottom_k_{}_sen_attr_{}_acc_fair_log.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
+        with open("./log/{}/{}_seed_{}_bottom_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(acc_fair_log_arr, fp)
 
-        with open("./log/{}_seed_{}_bottom_k_{}_sen_attr_{}_removed_data_info.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
+        with open("./log/{}/{}_seed_{}_bottom_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(removed_data_log, fp)
         
-        with open("./log/{}_seed_{}_bottom_k_{}_sen_attr_{}_confusion_matrix.txt".format(dataset, seed, k, sen_attr), "wb") as fp:
+        with open("./log/{}/{}_seed_{}_bottom_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
             pickle.dump(confu_mat_arr, fp)
 
 if __name__ == '__main__':

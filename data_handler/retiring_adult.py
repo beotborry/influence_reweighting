@@ -5,11 +5,12 @@ from data_handler.tabular_dataset import TabularDataset
 
 class RetiringDataset_torch(TabularDataset):
     """Adult dataset."""
-    def __init__(self, root, split='train', sen_attr='sex', group_mode=-1, influence_scores=None):
+    def __init__(self, root, split='train', sen_attr='race', group_mode=-1, influence_scores=None):
 
         dataset = RetiringDataset(root_dir=root)
-        if sen_attr == 'sex':
-            sen_attr_idx = 8
+        print(sen_attr)
+        if sen_attr == 'race':
+            sen_attr_idx = 9
         else:
             raise Exception('Not allowed group')
 
