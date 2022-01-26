@@ -3,7 +3,7 @@ import argparse
 def get_args():
     parser = argparse.ArgumentParser(description="influence score based weighting")
     parser.add_argument('--gpu', required=True, default=3, type=int)
-    parser.add_argument('--dataset', required=True, default='', choices=['adult', 'compas', 'bank', 'credit', 'celeba', 'utkface'])
+    parser.add_argument('--dataset', required=True, default='', choices=['adult', 'compas', 'bank', 'credit', 'celeba', 'utkface', 'retiring_adult'])
     parser.add_argument('--constraint', required=True, default='', choices=['dp', 'eo', 'eopp'])
     parser.add_argument('--method', required=True, default='', choices=['naive', 'influence', 'reweighting', 
                                                                         'naive_leave_k_out', 'naive_leave_bottom_k_out', 'leave_k_out_fine_tuning',

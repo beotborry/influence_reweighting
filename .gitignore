@@ -3,3 +3,5 @@ data_handler/data/
 model/
 data/celeba/
 data/utkface/
+data/retiring_adult/
+data/2018/

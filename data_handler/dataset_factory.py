@@ -10,7 +10,8 @@ dataset_dict = {'utkface' : ['data_handler.utkface','UTKFaceDataset'],
                 'bank' : ['data_handler.bank', 'BankDataset_torch'],
                 'cifar10s' : ['data_handler.cifar10s', 'CIFAR10_S'],
                 'cifar10cg' : ['data_handler.cifar10s', 'CIFAR10_CG'],
-                'credit' : ['data_handler.credit', 'CreditDataset_torch']
+                'credit' : ['data_handler.credit', 'CreditDataset_torch'],
+                'retiring_adult': ['data_handler.retiring_adult', 'RetiringDataset_torch']
                }
 
 class DatasetFactory:
@@ -71,8 +72,11 @@ class GenericDataset(data.Dataset):
             
     def _make_data(self, features, num_groups, num_classes):
         # if the original dataset not is divided into train / test set, this function is used
+        #dataset_size = self.__len__()
+
         import copy
         min_cnt = 100
+
         data_count = np.zeros((num_groups, num_classes), dtype=int)
         tmp = []
         for i in reversed(self.features):
