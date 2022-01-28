@@ -15,8 +15,8 @@ from mlp import MLP
 
 def main():
 ############### parisng argument ##########################
-    train_dataset_length = {'adult':28941, 'compas': 3946, 'bank': 19512, 'retiring_adult': 925247}
-    tabular_dataset = ['adult', 'compas', 'bank', 'retiring_adult']
+    train_dataset_length = {'adult':28941, 'compas': 3946, 'bank': 19512, 'retiring_adult': 925247, 'retiring_adult_coverage': 611640}
+    tabular_dataset = ['adult', 'compas', 'bank', 'retiring_adult', 'retiring_adult_coverage']
     
     args = get_args()
     seed = args.seed
@@ -121,6 +121,7 @@ def main():
         elif dataset == 'compas': feature_size = 401
         elif dataset == 'bank': feature_size = 57
         elif dataset == 'retiring_adult': feature_size = 10
+        elif dataset == 'retiring_adult_coverage': feature_size = 19
 
         if fine_tuning == 0:
             model = MLP(

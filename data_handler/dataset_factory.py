@@ -11,7 +11,8 @@ dataset_dict = {'utkface' : ['data_handler.utkface','UTKFaceDataset'],
                 'cifar10s' : ['data_handler.cifar10s', 'CIFAR10_S'],
                 'cifar10cg' : ['data_handler.cifar10s', 'CIFAR10_CG'],
                 'credit' : ['data_handler.credit', 'CreditDataset_torch'],
-                'retiring_adult': ['data_handler.retiring_adult', 'RetiringDataset_torch']
+                'retiring_adult': ['data_handler.retiring_adult', 'RetiringDataset_torch'],
+                'retiring_adult_coverage' : ['data_handler.retiring_adult_coverage', 'RetiringCoverageDataset_torch']
                }
 
 class DatasetFactory:
@@ -26,7 +27,7 @@ class DatasetFactory:
                   'split':split,
                   'group_mode':group_mode,
                   'influence_scores':influence_scores}
-        tabular_datas = ['adult','compas', 'credit', 'bank', 'retiring_adult']
+        tabular_datas = ['adult','compas', 'credit', 'bank', 'retiring_adult', 'retiring_adult_coverage']
         if name in tabular_datas:
             kwargs['sen_attr'] = sen_attr
         if name == 'celeba':

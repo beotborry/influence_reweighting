@@ -9,7 +9,7 @@ import argparse
 def get_args():
     parser = argparse.ArgumentParser(description="get influence scores for images")
     parser.add_argument('--gpu', required=True, default=3, type=int)
-    parser.add_argument('--dataset', required=True, default='', choices=['adult', 'compas', 'bank', 'celeba', 'utkface', 'retiring_adult'])
+    parser.add_argument('--dataset', required=True, default='', choices=['adult', 'compas', 'bank', 'celeba', 'utkface', 'retiring_adult', 'retiring_adult_coverage'])
     parser.add_argument('--sen_attr', default='sex')
     parser.add_argument('--target', required=True, default='')
     parser.add_argument('--constraint', required=True, default='', choices=['dp', 'eo', 'eopp'])
