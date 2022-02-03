@@ -26,6 +26,8 @@ def compute_confusion_matrix(dataloader, model, num_classes=2):
             
             group_set = torch.cat((group_set, groups))
             target_set = torch.cat((target_set, targets))
+            if len(outputs.shape) != 2:
+                outputs = torch.unsqueeze(outputs, 0)
             output_set = torch.cat((output_set, outputs.cpu()))
 
             pred = torch.argmax(outputs, 1)

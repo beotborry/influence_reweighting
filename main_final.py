@@ -233,6 +233,9 @@ def main():
                 if torch.cuda.is_available(): z, t, model = z.cuda(), t.cuda(), model.cuda()
                
                 y_pred = model(z)
+                if len(y_pred.shape) != 2:
+                    y_pred = torch.unsqueeze(y_pred, 0)
+                print(y_pred.shape, t.shape)
 
                 loss = torch.mean(criterion(y_pred, t))
                 optimizer.zero_grad()
