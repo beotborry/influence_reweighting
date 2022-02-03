@@ -235,7 +235,6 @@ def main():
                 y_pred = model(z)
                 if len(y_pred.shape) != 2:
                     y_pred = torch.unsqueeze(y_pred, 0)
-                print(y_pred.shape, t.shape)
 
                 loss = torch.mean(criterion(y_pred, t))
                 optimizer.zero_grad()
