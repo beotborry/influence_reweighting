@@ -145,8 +145,8 @@ def main():
         # scheduler = CosineAnnealingLR(optimizer, T_max=10, verbose=True)
 
         best_acc = 0.0
-        trng_acc = 0.0
         for _epoch in tqdm(range(epoch)):
+            trng_acc = 0.0
             model.train()
             for z, _, _, t, _ in tqdm(train_loader):
                 if torch.cuda.is_available(): z, t, model = z.cuda(), t.cuda(), model.cuda()
@@ -224,9 +224,8 @@ def main():
             pickle.dump(log_arr, fp)
 
     elif method == "naive_leave_k_out" or method == 'naive_leave_bottom_k_out':
-        trng_acc = 0.0
-
         for _epoch in tqdm(range(epoch)):
+            trng_acc = 0.0
             model.train()
             i = 0
 
