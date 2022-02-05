@@ -25,6 +25,7 @@ def get_args():
     parser.add_argument('--sen_attr', default='sex')
     parser.add_argument('--fine_tuning', required=True, type=int)
     parser.add_argument('--main_option', required=True, choices=['fair_only', 'fair_only_fine_tuning', 'intersect', 'intersect_fine_tuning'])
+    parser.add_argument('--log_option', required=True, choices=['all', 'last'])
 
     args = parser.parse_args()
 
