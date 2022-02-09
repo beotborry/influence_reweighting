@@ -157,31 +157,31 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, main_optio
 
                     group_size[g, l] += sum(mask).item()
 
-            print(group_size)
-            for g in group_element:
-                for l in [0, 1]:
-                    losses[g, l] /= group_size[g, l]
+        print(group_size)
+        for g in group_element:
+            for l in [0, 1]:
+                losses[g, l] /= group_size[g, l]
 
-            if abs(losses[0, 0] - losses[1, 0]) > abs(losses[0, 1] - losses[1, 1]):
-                if losses[0, 0] > losses[1, 0]:
-                    for elem in zip(grad_00, grad_10):
-                        result.append(elem[0] / group_size[0,0] - elem[1] / group_size[1, 0])
-                elif losses[0, 0] < losses[1, 0]:
-                    for elem in zip(grad_00, grad_10):
-                        result.append(elem[1] / group_size[1, 0] - elem[0] / group_size[0, 0])
-            elif abs(losses[0, 0] - losses[1, 0]) < abs(losses[0, 1] - losses[1, 1]):
-                if losses[0, 1] > losses[1, 1]:
-                    for elem in zip(grad_01, grad_11):
-                        result.append(elem[0] / group_size[0, 1] - elem[1] / group_size[1,1])
-                elif losses[0,1] < losses[1,1]:
-                    for elem in zip(grad_01, grad_11):
-                        result.append(elem[1]/group_size[1,1] - elem[0]/group_size[0,1])
-            
-            if save == True:
-                with open("./influence_score/{}/{}_{}_gradV_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
-                    pickle.dump(result, fp)
-            else:
-                return result
+        if abs(losses[0, 0] - losses[1, 0]) > abs(losses[0, 1] - losses[1, 1]):
+            if losses[0, 0] > losses[1, 0]:
+                for elem in zip(grad_00, grad_10):
+                    result.append(elem[0] / group_size[0,0] - elem[1] / group_size[1, 0])
+            elif losses[0, 0] < losses[1, 0]:
+                for elem in zip(grad_00, grad_10):
+                    result.append(elem[1] / group_size[1, 0] - elem[0] / group_size[0, 0])
+        elif abs(losses[0, 0] - losses[1, 0]) < abs(losses[0, 1] - losses[1, 1]):
+            if losses[0, 1] > losses[1, 1]:
+                for elem in zip(grad_01, grad_11):
+                    result.append(elem[0] / group_size[0, 1] - elem[1] / group_size[1,1])
+            elif losses[0,1] < losses[1,1]:
+                for elem in zip(grad_01, grad_11):
+                    result.append(elem[1]/group_size[1,1] - elem[0]/group_size[0,1])
+        
+        if save == True:
+            with open("./influence_score/{}/{}_{}_gradV_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
+                pickle.dump(result, fp)
+        else:
+            return result
 
 def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, main_option, option='fair',recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False):
     model.eval()

@@ -6,7 +6,6 @@ from data_handler.dataloader_factory import DataloaderFactory
 from utils import set_seed, get_accuracy
 from argument import get_args
 from tqdm import tqdm
-from influence_function_image import grad_V, s_test, calc_influence
 from utils_image import compute_confusion_matrix, calc_fairness_metric
 import pickle
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR, StepLR
@@ -59,7 +58,7 @@ def main():
                                                                                                     influence_scores=[],
                                                                                                     sen_attr=sen_attr)
 
-        with open("./influence_score/{}/{}_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, seed, sen_attr), "rb") as fp:
+        with open("./influence_score/{}/{}_{}_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
             influences = np.array(pickle.load(fp))
 
         pivot = int(train_dataset_length[dataset] * (k / 100.0))
@@ -67,7 +66,7 @@ def main():
             fair_top = np.argpartition(influences, -pivot)[-pivot:]
                
             if option == 'intersect' or option == 'intersect_fine_tuning':
-                with open("./influence_score/{}/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, seed, sen_attr), "rb") as fp:
+                with open("./influence_score/{}/{}_{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
                     influences_val_loss = np.array(pickle.load(fp))
                             
                 val_loss_top = np.argpartition(influences_val_loss, -pivot)[-pivot:]
@@ -80,7 +79,7 @@ def main():
             fair_bottom = np.argpartition(influences, pivot)[:pivot]
                      
             if option == 'intersect' or option == 'intersect_fine_tuning':
-                with open("./influence_score/{}/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, seed, sen_attr), "rb") as fp:
+                with open("./influence_score/{}/{}_{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
                     influences_val_loss = np.array(pickle.load(fp))
                     
                 val_loss_bottom = np.argpartition(influences_val_loss, pivot)[:pivot]
@@ -211,7 +210,7 @@ def main():
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
                 if dataset not in tabular_dataset: torch.save(model, './model/{}_resnet18_target_{}_seed_{}_sen_attr_{}'.format(dataset, target, seed, sen_attr))
-                else: torch.save(model, './model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, target, seed, sen_attr))
+                else: torch.save(model, './model/{}/{}_{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint, target, seed, sen_attr))
 
                 best_acc = test_acc * 100
 
@@ -220,7 +219,7 @@ def main():
         log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr,
                    test_fairness_metric_arr]
 
-        with open("./log/{}/{}_seed_{}_sen_attr_{}_naive_log.txt".format(option, dataset, seed, sen_attr), "wb") as fp:
+        with open("./log/{}/{}_{}_seed_{}_sen_attr_{}_naive_log.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "wb") as fp:
             pickle.dump(log_arr, fp)
 
     elif method == "naive_leave_k_out" or method == 'naive_leave_bottom_k_out':
@@ -327,22 +326,22 @@ def main():
         acc_fair_log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
         if method == 'naive_leave_k_out':
-            with open("./log/{}/{}_seed_{}_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, seed, k,sen_attr), "wb") as fp:
+            with open("./log/{}/{}_{}_seed_{}_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, fairness_constraint, seed, k,sen_attr), "wb") as fp:
                 pickle.dump(acc_fair_log_arr, fp)
 
-            with open("./log/{}/{}_seed_{}_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
+            with open("./log/{}/{}_{}_seed_{}_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
                 pickle.dump(removed_data_log, fp)
         
-            with open("./log/{}/{}_seed_{}_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
+            with open("./log/{}/{}_{}_seed_{}_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
                 pickle.dump(confu_mat_arr, fp)
         elif method == 'naive_leave_bottom_k_out':
-            with open("./log/{}/{}_seed_{}_bottom_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
+            with open("./log/{}/{}_{}_seed_{}_bottom_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
                 pickle.dump(acc_fair_log_arr, fp)
 
-            with open("./log/{}/{}_seed_{}_bottom_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
+            with open("./log/{}/{}_{}_seed_{}_bottom_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
                 pickle.dump(removed_data_log, fp)
         
-            with open("./log/{}/{}_seed_{}_bottom_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, seed, k, sen_attr), "wb") as fp:
+            with open("./log/{}/{}_{}_seed_{}_bottom_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
                 pickle.dump(confu_mat_arr, fp)
 
 if __name__ == '__main__':
