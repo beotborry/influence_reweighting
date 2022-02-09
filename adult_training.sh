@@ -6,8 +6,8 @@ do
 	python3 calc_influence.py --option fair --dataset adult --seed $seed --constraint eo --r 30 --t 1000 --gpu 0 --calc_option grad_V --target None --sen_attr sex --main_option fair_only
 	python3 calc_influence.py --option fair --dataset adult --seed $seed --constraint eo --r 30 --t 1000 --gpu 0 --calc_option s_test --target None --sen_attr sex --main_option fair_only
 	python3 calc_influence.py --option fair --dataset adult --seed $seed --constraint eo --r 30 --t 1000 --gpu 0 --calc_option influence --target None --sen_attr sex --main_option fair_only
-	python3 calc_influence.py --option val_loss --dataset adult --seed $seed --constraint eo --r 30 --t 1000 --gpu 0 --calc_option s_test --target None --sen_attr sex --main_option fair_only
-	python3 calc_influence.py --option val_loss --dataset adult --seed $seed --constraint eo --r 30 --t 1000 --gpu 0 --calc_option influence --target None --sen_attr sex --main_option fair_only
+	#python3 calc_influence.py --option val_loss --dataset adult --seed $seed --constraint eo --r 30 --t 1000 --gpu 0 --calc_option s_test --target None --sen_attr sex --main_option fair_only
+	#python3 calc_influence.py --option val_loss --dataset adult --seed $seed --constraint eo --r 30 --t 1000 --gpu 0 --calc_option influence --target None --sen_attr sex --main_option fair_only
 
 
 

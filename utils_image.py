@@ -1,3 +1,4 @@
+from tokenize import group
 import torch
 import numpy as np
 from sklearn.metrics import confusion_matrix
@@ -47,6 +48,9 @@ def compute_confusion_matrix(dataloader, model, num_classes=2):
 
 def calc_fairness_metric(constraint, confu_mat, num_groups=2, num_classes=2):
     if constraint == 'eopp':
+        '''
+        Compute EO disparity
+        '''
         group0_tn, group0_fp, group0_fn, group0_tp = confu_mat['0'].ravel()
         group1_tn, group1_fp, group1_fn, group1_tp = confu_mat['1'].ravel()
 
@@ -54,28 +58,29 @@ def calc_fairness_metric(constraint, confu_mat, num_groups=2, num_classes=2):
         group0_tpr = group0_tp / (group0_fn + group0_tp)
         group1_tpr = group1_tp / (group1_fn + group1_tp)
 
-        return max(abs(group0_tpr - pivot), abs(group1_tpr - pivot))
+        return max(abs(group0_tpr - pivot), abs(group1_tpr - pivot)) # from fairbatch paper
         #return abs(group0_tp / (group0_fn + group0_tp) - group1_tp / (group1_fn + group1_tp))
 
     elif constraint == 'eo':
         '''
-        Compute DEO_A
+        Compute ED disparity 
         '''
-        result = 0.0
-        eval_eo_list = np.zeros((num_groups, num_classes))
-        eval_data_count = np.zeros((num_groups, num_classes))
-
-        for g in range(num_groups):
-            for l in range(num_classes):
-                eval_data_count[g, l] = sum(confu_mat['g'][l,:]).float()
-                eval_eo_list[g, l] = confu_mat['g'][l,l]
+        group0_tn, group0_fp, group0_fn, group0_tp = confu_mat['0'].ravel()
+        group1_tn, group1_fp, group1_fn, group1_tp = confu_mat['1'].ravel()
         
-        eval_eo_prob = eval_eo_list / eval_data_count
+        pivot_1 = (group0_tp + group1_tp) / (group0_fn + group0_tp + group1_fn + group1_tp)
+        group0_tpr = group0_tp / (group0_fn + group0_tp)
+        group1_tpr = group1_tp / (group1_fn + group1_tp)
 
-        for l in range(num_classes):
-            result += max(eval_eo_prob[:, l]) - min(eval_eo_prob[:, l])
-        
-        return result / num_classes
+        EO_Y_1 = max(abs(group0_tpr - pivot_1), abs(group1_tpr - pivot_1))
+
+        pivot_0 = (group0_fp + group1_fp) / (group0_tn + group0_fp + group1_tn + group1_fp)
+        group0_fpr = (group0_fp) / (group0_tn + group0_fp)
+        group1_fpr = (group1_fp) / (group0_tn + group0_fp)
+
+        EO_Y_0 = max(abs(group0_fpr - pivot_0), abs(group1_fpr - pivot_0))
+
+        return max(EO_Y_0, EO_Y_1)
 
     elif constraint == 'dp':
         pass

@@ -35,10 +35,10 @@ def get_influence_score(model, dataloader, s_test_dataloader, random_sampler, co
 
     
     if option == 'fair':
-        with open("./influence_score/{}/{}_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, _seed, _sen_attr), "wb") as fp:
+        with open("./influence_score/{}/{}_{}_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
             pickle.dump(influences, fp)
     elif option == 'val_loss':
-        with open("./influence_score/{}/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, _seed, _sen_attr), "wb") as fp:
+        with open("./influence_score/{}/{}_{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
             pickle.dump(influences, fp)
 
 args = get_args()
