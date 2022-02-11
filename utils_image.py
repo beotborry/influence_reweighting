@@ -65,6 +65,7 @@ def calc_fairness_metric(constraint, confu_mat, num_groups=2, num_classes=2):
         '''
         Compute ED disparity 
         '''
+
         group0_tn, group0_fp, group0_fn, group0_tp = confu_mat['0'].ravel()
         group1_tn, group1_fp, group1_fn, group1_tp = confu_mat['1'].ravel()
         
@@ -76,7 +77,7 @@ def calc_fairness_metric(constraint, confu_mat, num_groups=2, num_classes=2):
 
         pivot_0 = (group0_fp + group1_fp) / (group0_tn + group0_fp + group1_tn + group1_fp)
         group0_fpr = (group0_fp) / (group0_tn + group0_fp)
-        group1_fpr = (group1_fp) / (group0_tn + group0_fp)
+        group1_fpr = (group1_fp) / (group1_tn + group1_fp)
 
         EO_Y_0 = max(abs(group0_fpr - pivot_0), abs(group1_fpr - pivot_0))
 
