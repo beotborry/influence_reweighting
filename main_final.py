@@ -249,7 +249,7 @@ def main():
                 trng_acc_arr.append(trng_acc)
 
                 confu_mat_train = compute_confusion_matrix(train_loader, model)
-                trng_fairness_metric = calc_fairness_metric("eopp", confu_mat_train)
+                trng_fairness_metric = calc_fairness_metric(args.constraint, confu_mat_train)
                 trng_fairness_metric_arr.append(trng_fairness_metric)
 
                 confu_mat_train = [confu_mat_train['0'], confu_mat_train['1']]
@@ -261,7 +261,7 @@ def main():
                     trng_acc_arr.append(trng_acc)
 
                     confu_mat_train = compute_confusion_matrix(train_loader, model)
-                    trng_fairness_metric = calc_fairness_metric("eopp", confu_mat_train)
+                    trng_fairness_metric = calc_fairness_metric(args.constraint, confu_mat_train)
                     trng_fairness_metric_arr.append(trng_fairness_metric)
 
                     confu_mat_train = [confu_mat_train['0'], confu_mat_train['1']]
@@ -288,7 +288,7 @@ def main():
             
 
                 confu_mat_test = compute_confusion_matrix(test_loader, model)
-                test_fairness_metric = calc_fairness_metric("eopp", confu_mat_test)
+                test_fairness_metric = calc_fairness_metric(args.constraint, confu_mat_test)
 
                 confu_mat_test = [confu_mat_test['0'], confu_mat_test['1']]
                 print("Test Acc: {:.2f}, Test fairness metric: {:.2f}".format(test_acc * 100, test_fairness_metric * 100))
@@ -306,7 +306,7 @@ def main():
                     valid_acc /= len(valid_loader.dataset)
 
                 confu_mat_valid = compute_confusion_matrix(valid_loader, model)
-                valid_fairness_metric = calc_fairness_metric("eopp", confu_mat_valid)
+                valid_fairness_metric = calc_fairness_metric(args.constraint, confu_mat_valid)
 
                 confu_mat_valid = [confu_mat_valid['0'], confu_mat_valid['1']]
                 print("Valid Acc: {:.2f}, Valid fairness metric: {:.2f}".format(valid_acc * 100, valid_fairness_metric * 100))
