@@ -75,21 +75,43 @@ class GenericDataset(data.Dataset):
         # if the original dataset not is divided into train / test set, this function is used
         #dataset_size = self.__len__()
 
-        import copy
-        min_cnt = 100
+        total_data_count = np.zeros((num_groups, num_classes), dtype=int)
 
-        data_count = np.zeros((num_groups, num_classes), dtype=int)
+        for i in reversed(self.features):
+            s, l = int(i[0]), int(i[1])
+            total_data_count[s, l] += 1
+        print("total_summary", total_data_count)
+
+        #import copy
+        #min_cnt = 100
+
+        data_count_test = np.zeros((num_groups, num_classes), dtype=int)
         tmp = []
         for i in reversed(self.features):
             s, l = int(i[0]), int(i[1])
-            data_count[s, l] += 1
-            if data_count[s, l] <= min_cnt:
+            #data_count_test[s, l] += 1
+            if data_count_test[s, l] <= int(0.2 * total_data_count[s, l]):
+                data_count_test[s, l] += 1
+
                 features.remove(i)
                 tmp.append(i)
-        
-        features = features if self.split =='train' else tmp
-        return features
-        
+
+        total_data_count -= data_count_test
+
+        if self.split == 'test':
+            return tmp
+        else:
+            data_count_valid = np.zeros((num_groups, num_classes), dtype=int)
+            valid = []
+            for i in reversed(self.features):
+                s, l = int(i[0]), int(i[1])
+                if data_count_valid[s, l] <= int(0.2 * total_data_count[s, l]):
+                    data_count_valid[s, l] += 1
+                    features.remove(i)
+                    valid.append(i)
+            if self.split == 'valid':
+                return valid
+            else: return features        
     
     def _balance_test_data(self, num_data, num_groups, num_classes):
         # if the original dataset is divided into train / test set, this function is used        

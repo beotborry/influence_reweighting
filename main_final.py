@@ -116,6 +116,7 @@ def main():
     if dataset not in tabular_dataset:
         model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
         optimizer = AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
+        scheduler = StepLR(optimizer, step_size=30, gamma=0.1, verbose=True)
     else:
         if dataset == 'adult': feature_size = 98
         elif dataset == 'compas': feature_size = 401
@@ -209,7 +210,7 @@ def main():
             if test_acc * 100 >= best_acc:
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
-                if dataset not in tabular_dataset: torch.save(model, './model/{}_resnet18_target_{}_seed_{}_sen_attr_{}'.format(dataset, target, seed, sen_attr))
+                if dataset not in tabular_dataset: torch.save(model, './model/{}/{}_{}_resnet18_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint,  target, seed, sen_attr))
                 else: torch.save(model, './model/{}/{}_{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint, target, seed, sen_attr))
 
                 best_acc = test_acc * 100
@@ -221,6 +222,11 @@ def main():
 
         with open("./log/{}/{}_{}_seed_{}_sen_attr_{}_naive_log.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "wb") as fp:
             pickle.dump(log_arr, fp)
+          
+        with open("./log/{}/{}_{}_seed_{}_sen_attr_{}_naive_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "wb") as fp:
+            pickle.dump(confu_mat_arr, fp)
+
+
 
     elif method == "naive_leave_k_out" or method == 'naive_leave_bottom_k_out':
         for _epoch in tqdm(range(epoch)):

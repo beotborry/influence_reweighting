@@ -21,22 +21,22 @@ class UTKFaceDataset(data_handler.GenericDataset):
     num_map = {
         'age' : 100,
         'gender' : 2,
-        'race' : 4
+        'race' : 2
     }
 
-    def __init__(self, img_size=224, **kwargs):
+    def __init__(self, img_size=112, **kwargs):
         mean, std = get_mean_std('utkface', group=kwargs['group_mode'])
         if kwargs['split'] == 'train':
             transform = transforms.Compose(
-                [transforms.Resize((256, 256)),
-                 transforms.RandomCrop(224),
+                [transforms.Resize((128, 128)),
+                 transforms.RandomCrop(112),
                  transforms.RandomHorizontalFlip(),
                  transforms.ToTensor(),
                  transforms.Normalize(mean=mean, std=std)]
             )
-        elif kwargs['split'] == 'test':
+        elif kwargs['split'] == 'test' or kwargs['split'] == 'valid':
             transform = transforms.Compose(
-                [transforms.Resize((224, 224)),
+                [transforms.Resize((112, 112)),
                  transforms.ToTensor(),
                  transforms.Normalize(mean=mean, std=std)]
             )        
@@ -101,12 +101,19 @@ class UTKFaceDataset(data_handler.GenericDataset):
         return int(sensi), int(label)
     
     def _transform_age(self, age):
+        '''
         if age<20:
             label = 0
         elif age<40:
             label = 1
         else:
             label = 2
+        '''
+
+        if age < 35:
+            label = 1
+        else:
+            label = 0
         return label 
         
     def _delete_incomplete_images(self, filename):
@@ -116,7 +123,8 @@ class UTKFaceDataset(data_handler.GenericDataset):
     def _delete_others_n_age_filter(self, filename):
 
         filename = [image for image in filename
-                         if ((image.split('_')[self.fea_map['race']] != '4'))]
+                         if ((image.split('_')[self.fea_map['race']] != '4') and (image.split('_')[self.fea_map['race']] != '3') and
+                             (image.split('_')[self.fea_map['race']] != '2'))]
         ages = [self._transform_age(int(image.split('_')[self.fea_map['age']])) for image in filename]
         self.num_map['age'] = len(set(ages))
 

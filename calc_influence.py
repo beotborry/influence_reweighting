@@ -61,9 +61,9 @@ if torch.cuda.is_available(): torch.cuda.set_device(device)
 print(device)
 
 if dataset in ("celeba", "utkface"):
-    model = torch.load("./model/{}_resnet18_target_{}_seed_{}_sen_attr_{}".format(dataset, target, seed, sen_attr))
-    num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(dataset, img_size=128,
-                                                                                      batch_size=128, seed=100,
+    model = torch.load("./model/{}/{}_{}_resnet18_target_{}_seed_{}_sen_attr_{}".format(main_option, dataset, args.constraint, target, seed, sen_attr))
+    num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(dataset,
+                                                                                      batch_size=128, seed=seed,
                                                                                       num_workers=0,
                                                                                       target=target,
                                                                                       sen_attr=sen_attr)
