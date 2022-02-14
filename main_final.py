@@ -10,7 +10,7 @@ from utils_image import compute_confusion_matrix, calc_fairness_metric
 import pickle
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR, StepLR
 from mlp import MLP
-
+from shufflenet import shufflenet_v2_x1_0
 
 def main():
 ############### parisng argument ##########################
@@ -114,7 +114,9 @@ def main():
     confu_mat_arr = []
 
     if dataset not in tabular_dataset:
-        model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+        # model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+        model = shufflenet_v2_x1_0(pretrained=True)
+        model.fc = nn.Linear(in_features=1024, out_features=num_classes, bias=True)
         optimizer = AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
         scheduler = StepLR(optimizer, step_size=30, gamma=0.1, verbose=True)
     else:
