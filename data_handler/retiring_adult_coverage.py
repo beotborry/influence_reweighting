@@ -8,7 +8,7 @@ class RetiringCoverageDataset_torch(TabularDataset):
     def __init__(self, root, split='train', sen_attr='sex', group_mode=-1, influence_scores=None):
 
         dataset = RetiringCoverageDataset(root_dir=root)
-        print(dataset.feature_names)
+        #print(dataset.feature_names)
         if sen_attr == 'race':
             sen_attr_idx = 18
         else:

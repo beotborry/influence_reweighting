@@ -212,7 +212,7 @@ def main():
             if test_acc * 100 >= best_acc:
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
-                if dataset not in tabular_dataset: torch.save(model, './model/{}/{}_{}_resnet18_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint,  target, seed, sen_attr))
+                if dataset not in tabular_dataset: torch.save(model, './model/{}/{}_{}_shufflenet_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint,  target, seed, sen_attr))
                 else: torch.save(model, './model/{}/{}_{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint, target, seed, sen_attr))
 
                 best_acc = test_acc * 100

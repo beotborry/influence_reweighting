@@ -8,7 +8,7 @@ class RetiringDataset_torch(TabularDataset):
     def __init__(self, root, split='train', sen_attr='sex', group_mode=-1, influence_scores=None):
 
         dataset = RetiringDataset(root_dir=root)
-        print(sen_attr)
+        #print(sen_attr)
         if sen_attr == 'race':
             sen_attr_idx = 9
         else:
