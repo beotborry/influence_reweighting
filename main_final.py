@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 from torch.optim import SGD, Adam, AdamW
 from data_handler.dataloader_factory import DataloaderFactory
-from utils import set_seed, get_accuracy
+from utils import set_seed, get_accuracy, make_log_name
 from argument import get_args
 from tqdm import tqdm
 from utils_image import compute_confusion_matrix, calc_fairness_metric
@@ -32,10 +32,13 @@ def main():
     fine_tuning = args.fine_tuning
     option = args.main_option
     log_option = args.log_option
+    alpha = args.alpha
 
     device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
     if torch.cuda.is_available(): torch.cuda.set_device(device)
     print(device)
+
+    log_epi = make_log_name(args)
 
     if method == 'naive':
         num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(name=dataset,
@@ -58,7 +61,7 @@ def main():
                                                                                                     influence_scores=[],
                                                                                                     sen_attr=sen_attr)
 
-        with open("./influence_score/{}/{}_{}_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
+        with open("./influence_score/fair_only/{}_{}_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
             influences = np.array(pickle.load(fp))
 
         pivot = int(train_dataset_length[dataset] * (k / 100.0))
@@ -66,11 +69,17 @@ def main():
             fair_top = np.argpartition(influences, -pivot)[-pivot:]
                
             if option == 'intersect' or option == 'intersect_fine_tuning':
-                with open("./influence_score/{}/{}_{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
+                with open("./influence_score/fair_only/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
                     influences_val_loss = np.array(pickle.load(fp))
                             
                 val_loss_top = np.argpartition(influences_val_loss, -pivot)[-pivot:]
                 remove_idx = np.intersect1d(fair_top, val_loss_top)
+            elif option == 'fair_with_val_loss':
+                with open("./influence_score/fair_only/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
+                    # print("here")
+                    influences_val_loss = np.array(pickle.load(fp))
+                    influences = alpha * influences + (1 - alpha) * influences_val_loss
+                    remove_idx = np.argpartition(influences, -pivot)[-pivot:]
             else: remove_idx = fair_top
     
 
@@ -79,13 +88,15 @@ def main():
             fair_bottom = np.argpartition(influences, pivot)[:pivot]
                      
             if option == 'intersect' or option == 'intersect_fine_tuning':
-                with open("./influence_score/{}/{}_{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
+                with open("./influence_score/fair_only/{}_{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
                     influences_val_loss = np.array(pickle.load(fp))
-                    
                 val_loss_bottom = np.argpartition(influences_val_loss, pivot)[:pivot]
-
-
                 remove_idx = np.intersect1d(fair_bottom, val_loss_bottom)
+            elif option == 'fair_with_val_loss':
+                with open("./influence_score/fair_only/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
+                    influences_val_loss = np.array(pickle.load(fp))
+                    influences = alpha * influences + (1 - alpha) * influences_val_loss
+                    remove_idx = np.argpartition(influences, pivot)[:pivot]
             else: remove_idx = fair_bottom
            
         removed_data_log = np.zeros((num_groups, num_classes))
@@ -222,10 +233,10 @@ def main():
         log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr,
                    test_fairness_metric_arr]
 
-        with open("./log/{}/{}_{}_seed_{}_sen_attr_{}_naive_log.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "wb") as fp:
+        with open(log_epi + "_naive_log.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "wb") as fp:
             pickle.dump(log_arr, fp)
           
-        with open("./log/{}/{}_{}_seed_{}_sen_attr_{}_naive_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "wb") as fp:
+        with open(log_epi + "_naive_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, sen_attr), "wb") as fp:
             pickle.dump(confu_mat_arr, fp)
 
 
@@ -304,14 +315,44 @@ def main():
                 test_fairness_metric_arr.append(test_fairness_metric)
 
                 valid_acc = 0.0
+                if fairness_constraint == "eopp":
+                    loss_arr = np.zeros(2)
+                    group_size = np.zeros(2)
+                elif fairness_constraint == "eo":
+                    loss_arr = np.zeros((2, 2))
+
                 with torch.no_grad():
                     for i, data in enumerate(valid_loader):
-                        z, _, _, t, _ = data
+                        z, _, groups, t, _ = data
                         if torch.cuda.is_available(): z, t, model = z.cuda(), t.cuda(), model.cuda()
                         y_pred = model(z)
 
+                        # labels = t
+                        # groups = groups.long()
+
+                        # group_element = list(torch.unique(groups).numpy())
+                        # if fairness_constraint == "eopp":
+                        #     loss = nn.CrossEntropyLoss(reduction='none')(y_pred, t)
+
+                            # for g in group_element:
+                            #     group_mask = (groups == g)
+                            #     label_mask = (labels == 1)
+
+                            #     if torch.cuda.is_available():
+                            #         group_mask = group_mask.cuda()
+                            #         label_mask = label_mask.cuda()
+                                
+                            #     mask = torch.logical_and(group_mask, label_mask)
+                            #     with torch.no_grad():
+                            #         loss_arr[g] += torch.sum(loss[mask]).item()
+                            #     group_size[g] += sum(mask).item()
+
                         valid_acc += torch.sum(get_accuracy(y_pred, t, reduction='none'))
                     valid_acc /= len(valid_loader.dataset)
+                # loss_arr[0] /= group_size[0]
+                # loss_arr[1] /= group_size[1]
+
+                # print("valid violation: ", abs(loss_arr[0] - loss_arr[1]))
 
                 confu_mat_valid = compute_confusion_matrix(valid_loader, model)
                 valid_fairness_metric = calc_fairness_metric(args.constraint, confu_mat_valid)
@@ -333,24 +374,14 @@ def main():
 
         acc_fair_log_arr = [trng_acc_arr, trng_fairness_metric_arr, valid_acc_arr, valid_fairness_metric_arr, test_acc_arr, test_fairness_metric_arr]
 
-        if method == 'naive_leave_k_out':
-            with open("./log/{}/{}_{}_seed_{}_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, fairness_constraint, seed, k,sen_attr), "wb") as fp:
-                pickle.dump(acc_fair_log_arr, fp)
+        with open(log_epi + "_acc_fair_log.txt".format(option, dataset, fairness_constraint, seed, k,sen_attr), "wb") as fp:
+            pickle.dump(acc_fair_log_arr, fp)
 
-            with open("./log/{}/{}_{}_seed_{}_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
-                pickle.dump(removed_data_log, fp)
-        
-            with open("./log/{}/{}_{}_seed_{}_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
-                pickle.dump(confu_mat_arr, fp)
-        elif method == 'naive_leave_bottom_k_out':
-            with open("./log/{}/{}_{}_seed_{}_bottom_k_{}_sen_attr_{}_acc_fair_log.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
-                pickle.dump(acc_fair_log_arr, fp)
-
-            with open("./log/{}/{}_{}_seed_{}_bottom_k_{}_sen_attr_{}_removed_data_info.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
-                pickle.dump(removed_data_log, fp)
-        
-            with open("./log/{}/{}_{}_seed_{}_bottom_k_{}_sen_attr_{}_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
-                pickle.dump(confu_mat_arr, fp)
+        with open(log_epi + "_removed_data_info.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
+            pickle.dump(removed_data_log, fp)
+    
+        with open(log_epi + "_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
+            pickle.dump(confu_mat_arr, fp)
 
 if __name__ == '__main__':
     main()

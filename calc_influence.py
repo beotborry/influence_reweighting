@@ -38,7 +38,7 @@ def get_influence_score(model, dataloader, s_test_dataloader, random_sampler, co
         with open("./influence_score/{}/{}_{}_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
             pickle.dump(influences, fp)
     elif option == 'val_loss':
-        with open("./influence_score/{}/{}_{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
+        with open("./influence_score/{}/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, _seed, _sen_attr), "wb") as fp:
             pickle.dump(influences, fp)
 
 args = get_args()
@@ -71,7 +71,7 @@ if dataset in ("celeba", "utkface"):
     train_dataset = train_loader.dataset
     test_dataset = test_loader.dataset
 else:
-    model = torch.load("./model/{}/{}_{}_MLP_target_{}_seed_{}_sen_attr_{}".format(main_option, dataset, args.constraint, target, seed, sen_attr))
+    model = torch.load("./model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}".format(main_option, dataset, target, seed, sen_attr))
     num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(name=dataset, batch_size=128, seed=seed, num_workers=0, target=target, influence_scores=[], sen_attr=sen_attr)
 
     train_dataset = train_loader.dataset
