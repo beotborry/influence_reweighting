@@ -63,6 +63,7 @@ def main():
 
         with open("./influence_score/fair_only/{}_{}_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, fairness_constraint, seed, sen_attr), "rb") as fp:
             influences = np.array(pickle.load(fp))
+            influences = (influences - influences.min()) / (influences.max() - influences.min())
 
         pivot = int(train_dataset_length[dataset] * (k / 100.0))
         if method == 'naive_leave_k_out':
@@ -78,6 +79,8 @@ def main():
                 with open("./influence_score/fair_only/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
                     # print("here")
                     influences_val_loss = np.array(pickle.load(fp))
+                    influences_val_loss = (influences_val_loss - influences_val_loss.min()) / (influences_val_loss.max() - influences_val_loss.min())
+                    
                     influences = alpha * influences + (1 - alpha) * influences_val_loss
                     remove_idx = np.argpartition(influences, -pivot)[-pivot:]
             else: remove_idx = fair_top
@@ -95,6 +98,8 @@ def main():
             elif option == 'fair_with_val_loss':
                 with open("./influence_score/fair_only/{}_val_loss_influence_score_seed_{}_sen_attr_{}.txt".format(dataset, seed, sen_attr), "rb") as fp:
                     influences_val_loss = np.array(pickle.load(fp))
+                    influences_val_loss = (influences_val_loss - influences_val_loss.min()) / (influences_val_loss.max() - influences_val_loss.min())
+
                     influences = alpha * influences + (1 - alpha) * influences_val_loss
                     remove_idx = np.argpartition(influences, pivot)[:pivot]
             else: remove_idx = fair_bottom
