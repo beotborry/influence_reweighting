@@ -388,5 +388,7 @@ def main():
         with open(log_epi + "_confusion_matrix.txt".format(option, dataset, fairness_constraint, seed, k, sen_attr), "wb") as fp:
             pickle.dump(confu_mat_arr, fp)
 
+        # torch.save(model, f"./model/{option}/{dataset}_MLP_target_N")
+
 if __name__ == '__main__':
     main()
