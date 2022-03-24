@@ -21,7 +21,7 @@ class RetiringDataset(StandardDataset):
                  protected_attribute_names=['RAC1P'],
                  privileged_classes=[[1]],
                  instance_weights_name=None,
-                 categorical_features=[],
+                 categorical_features=['COW','SCHL','MAR','OCCP','POBP','RELP'],
                  features_to_keep=[], features_to_drop=[],
                  na_values=['NaN'], custom_preprocessing=None,
                  metadata=None):
@@ -80,6 +80,18 @@ class RetiringDataset(StandardDataset):
             'WKHP',
             'SEX',
             'RAC1P', 'PINCP']
+
+        # categorical_features = [
+        #     'COW',
+        #     'SCHL',
+        #     'MAR',
+        #     'OCCP',
+        #     'POBP',
+        #     'RELP',
+        #     'WKHP',
+        #     'SEX'
+        # ]
+        
         try:
             df = pd.read_csv(root_dir + '/retiring_adult.csv', header=0, names=column_names, skipinitialspace=False, na_values=na_values)
         except IOError as err:
@@ -101,6 +113,9 @@ class RetiringDataset(StandardDataset):
             df['RAC1P'] = group_transform(df['RAC1P'])
             df.to_csv("./data/retiring_adult/retiring_adult.csv", sep=',', index=False, columns=column_names)
 
+            sex_binarizer = lambda x: x == 1
+            df['SEX'] = sex_binarizer(df['SEX'])
+                        
             import sys
             sys.exit(1)
 

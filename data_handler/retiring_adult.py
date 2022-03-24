@@ -10,7 +10,8 @@ class RetiringDataset_torch(TabularDataset):
         dataset = RetiringDataset(root_dir=root)
         #print(sen_attr)
         if sen_attr == 'race':
-            sen_attr_idx = 9
+            # sen_attr_idx = 9
+            sen_attr_idx = 3
         else:
             raise Exception('Not allowed group')
 

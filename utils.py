@@ -291,6 +291,9 @@ def make_log_name(args):
             log_name = log_epi + "_bottom_k_{}_sen_attr_{}".format(args.k, args.sen_attr)
         elif args.main_option == "fair_with_val_loss":
             log_name = log_epi + "_bottom_k_{}_alpha_{}_sen_attr_{}".format(args.k, args.alpha, args.sen_attr)
+    
+    elif args.method == "naive":
+        log_name = "./log/{}/{}_seed_{}".format(args.main_option, args.dataset, args.seed) + "_sen_attr_{}".format(args.sen_attr)
 
     return log_name
 

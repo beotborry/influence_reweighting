@@ -69,6 +69,7 @@ class StandardDataset(BinaryLabelDataset):
                 `None`, no extra preprocessing is applied.
             metadata (optional): Additional metadata to append.
         """
+
         # 2. Perform dataset-specific preprocessing
         if custom_preprocessing:
             df = custom_preprocessing(df)
@@ -117,6 +118,7 @@ class StandardDataset(BinaryLabelDataset):
                 np.array(unprivileged_values, dtype=np.float64))
 
         # 7. Make labels binary
+        # print(df.columns.get_loc("RAC1P"), df.columns.get_loc("PINCP"))
         favorable_label = 1.
         unfavorable_label = 0.
         if callable(favorable_classes):

@@ -10,7 +10,8 @@ class RetiringCoverageDataset_torch(TabularDataset):
         dataset = RetiringCoverageDataset(root_dir=root)
         #print(dataset.feature_names)
         if sen_attr == 'race':
-            sen_attr_idx = 18
+            # sen_attr_idx = 18
+            sen_attr_idx = 3
         else:
             raise Exception('Not allowed group')
 

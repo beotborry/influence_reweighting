@@ -16,10 +16,19 @@ class DataloaderFactory:
 
         test_dataset = DatasetFactory.get_dataset(name, split='test', target=target,
                                                   group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio, influence_scores=influence_scores)
+        
+        # print(len(test_dataset[0][0]))
+        # print(test_dataset[0][0][811], test_dataset[0][2])
+        # print(test_dataset[1][0][811], test_dataset[1][2])
+        # import sys
+        # sys.exit(1)
+
         train_dataset = DatasetFactory.get_dataset(name, split='train', target=target,
                                                    group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio, influence_scores=influence_scores)
+        print("here")
         valid_dataset = DatasetFactory.get_dataset(name, split='valid', target=target,
                                                    group_mode=group_mode, sen_attr=sen_attr, skew_ratio=skew_ratio, influence_scores=influence_scores)
+        print("here")
 
         print('# data of test ',  len(test_dataset))
         print('# data of train ', len(train_dataset))
@@ -45,6 +54,7 @@ class DataloaderFactory:
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler,
                                       shuffle=shuffle, num_workers=num_workers, worker_init_fn=_init_fn,
                                       pin_memory=True, drop_last=False)
+                                      
         valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, sampler=sampler,
                                       shuffle=shuffle, num_workers=num_workers, worker_init_fn=_init_fn,
                                       pin_memory=True, drop_last=False)

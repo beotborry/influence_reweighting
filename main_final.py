@@ -139,8 +139,8 @@ def main():
         if dataset == 'adult': feature_size = 98
         elif dataset == 'compas': feature_size = 401
         elif dataset == 'bank': feature_size = 57
-        elif dataset == 'retiring_adult': feature_size = 10
-        elif dataset == 'retiring_adult_coverage': feature_size = 19
+        elif dataset == 'retiring_adult': feature_size = 812
+        elif dataset == 'retiring_adult_coverage': feature_size = 131
 
         if fine_tuning == 0:
             model = MLP(
@@ -229,7 +229,7 @@ def main():
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
                 if dataset not in tabular_dataset: torch.save(model, './model/{}/{}_{}_shufflenet_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint,  target, seed, sen_attr))
-                else: torch.save(model, './model/{}/{}_{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint, target, seed, sen_attr))
+                else: torch.save(model, './model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, target, seed, sen_attr))
 
                 best_acc = test_acc * 100
 
