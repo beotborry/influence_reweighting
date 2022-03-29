@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for seed in 0
+for seed in 1 2 3 4
 do 
 	python3 main_final.py --dataset retiring_adult --method naive --seed $seed --constraint eopp --epoch 50 --iteration 1 --gpu 2 --sen_attr race --fine_tuning 0 --main_option fair_only_split --log_option all
 	python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eopp --r 93 --t 10000 --gpu 2 --calc_option grad_V --target None --sen_attr race --main_option fair_only_split
