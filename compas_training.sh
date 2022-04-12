@@ -3,11 +3,11 @@
 for seed in 0 1 2 3 4
 do
 
-	python3 main_final.py --sen_attr sex --dataset compas --method naive --seed $seed --constraint eopp --epoch 50 --iteration 1 --gpu 1 --fine_tuning 0 --main_option fair_only_split --log_option all
-	python3 calc_influence.py --option fair --sen_attr sex --dataset compas --seed $seed --constraint eopp --r 5 --t 1000 --gpu 1 --calc_option grad_V --target None --main_option fair_only_split
+	# python3 main_final.py --sen_attr sex --dataset compas --method naive --seed $seed --constraint eo --epoch 50 --iteration 1 --gpu 1 --fine_tuning 0 --main_option fair_only_split --log_option all
+	python3 calc_influence.py --option fair --sen_attr sex --dataset compas --seed $seed --constraint eo --r 5 --t 1000 --gpu 1 --calc_option grad_V --target None --main_option fair_only_split
 	# python3 calc_influence.py --option fair --sen_attr sex --dataset compas --seed $seed --constraint eo --r 5 --t 1000 --gpu 1 --calc_option grad_V --target None --main_option fair_only
-	python3 calc_influence.py --option fair --sen_attr sex --dataset compas --seed $seed --constraint eopp --r 5 --t 1000 --gpu 1 --calc_option s_test --target None --main_option fair_only_split
-	python3 calc_influence.py --option fair --sen_attr sex --dataset compas --seed $seed --constraint eopp --r 5 --t 1000 --gpu 1 --calc_option influence --target None --main_option fair_only_split
+	python3 calc_influence.py --option fair --sen_attr sex --dataset compas --seed $seed --constraint eo --r 5 --t 1000 --gpu 1 --calc_option s_test --target None --main_option fair_only_split
+	python3 calc_influence.py --option fair --sen_attr sex --dataset compas --seed $seed --constraint eo --r 5 --t 1000 --gpu 1 --calc_option influence --target None --main_option fair_only_split
 	# python3 calc_influence.py --option val_loss --sen_attr sex --dataset compas --seed $seed --constraint eopp --r 5 --t 1000 --gpu 1 --calc_option s_test --target None --main_option fair_only
 	# python3 calc_influence.py --option val_loss --sen_attr sex --dataset compas --seed $seed --constraint eopp --r 5 --t 1000 --gpu 1 --calc_option influence --target None --main_option fair_only
 

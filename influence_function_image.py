@@ -207,11 +207,36 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, main_optio
         #     elif losses[0,1] < losses[1,1]:
         #         for elem in zip(grad_01, grad_11):
         #             result.append(elem[1]/group_size[1,1] - elem[0]/group_size[0,1])
-        if save == True:
+        if save == True and split == False:
             with open("./influence_score/{}/{}_{}_gradV_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
                 pickle.dump(result, fp)
-        else:
-            return result
+        
+        elif save == True and split == True:
+            
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_loss_info_seed_{_seed}_sen_attr_{_sen_attr}.txt", "wb") as fp:
+                pickle.dump(losses, fp)
+            
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group0_label0.txt", "wb") as fp:
+                for i in range(len(grad_00)):
+                    grad_00[i] /= group_size[0][0]
+                pickle.dump(grad_00, fp)
+            
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group0_label1.txt", "wb") as fp:
+                for i in range(len(grad_01)):
+                    grad_01[i] /= group_size[0][1]
+                pickle.dump(grad_01, fp)
+
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group1_label0.txt", "wb") as fp:
+                for i in range(len(grad_10)):
+                    grad_10[i] /= group_size[1][0]
+                pickle.dump(grad_10, fp)
+
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group1_label1.txt", "wb") as fp:
+                for i in range(len(grad_11)):
+                    grad_11[i] /= group_size[1][1]
+                pickle.dump(grad_11, fp)
+
+
 
 def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, main_option, option='fair',recursion_depth=100, damp=0.01, scale=500.0, load_gradV=False, save=False, split=False):
     model.eval()
@@ -258,50 +283,87 @@ def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _se
         return h_estimate
 
     elif split == True:
-        with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "rb") as fp:
-            group0_gradV = pickle.load(fp)
-        with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group1.txt", "rb") as fp:
-            group1_gradV = pickle.load(fp)
 
-        s_test_arr = []    
-        for g in range(2):
-            if g == 0: v = group0_gradV
-            elif g == 1: v = group1_gradV
+        if constraint == "eopp":
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "rb") as fp:
+                group0_gradV = pickle.load(fp)
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group1.txt", "rb") as fp:
+                group1_gradV = pickle.load(fp)
 
-            h_estimate = v.copy()
+            s_test_arr = []    
+            for g in range(2):
+                if g == 0: v = group0_gradV
+                elif g == 1: v = group1_gradV
 
-            params = [p for p in model.parameters() if p.requires_grad]
+                h_estimate = v.copy()
 
-            for data in random_sampler:
-                X, _, _, t, tup = data
-                idx = tup[0]
+                params = [p for p in model.parameters() if p.requires_grad]
 
-                if torch.cuda.is_available():
-                    X, t, model, weights = X.cuda(), t.cuda(), model.cuda(), weights.cuda()
+                for data in random_sampler:
+                    X, _, _, t, tup = data
+                    idx = tup[0]
 
-                y = model(X)
-                loss = weights[idx] * torch.nn.CrossEntropyLoss(reduction='none')(y, t)
-                break
+                    if torch.cuda.is_available():
+                        X, t, model, weights = X.cuda(), t.cuda(), model.cuda(), weights.cuda()
 
-            for i in tqdm(range(recursion_depth)):
-                hv = hvp(loss[i], params, h_estimate)
+                    y = model(X)
+                    loss = weights[idx] * torch.nn.CrossEntropyLoss(reduction='none')(y, t)
+                    break
 
-                with torch.no_grad():
-                    h_estimate = [
-                        _v + (1 - damp) * _h_e - _hv / scale for _v, _h_e, _hv in zip(v, h_estimate, hv)
-                    ]
-            
-            s_test_arr.append(h_estimate)
+                for i in tqdm(range(recursion_depth)):
+                    hv = hvp(loss[i], params, h_estimate)
 
-            # if g == 0:
-            #     with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "wb") as fp:
-            #         pickle.dump(h_estimate, fp)
-            # elif g == 1:
-            #     with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_seed_{_seed}_sen_attr_{_sen_attr}_group1.txt", "wb") as fp:
-            #         pickle.dump(h_estimate, fp)
+                    with torch.no_grad():
+                        h_estimate = [
+                            _v + (1 - damp) * _h_e - _hv / scale for _v, _h_e, _hv in zip(v, h_estimate, hv)
+                        ]
+                
+                s_test_arr.append(h_estimate)
+            return s_test_arr
+        elif constraint == "eo":
 
-        return s_test_arr
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group0_label0.txt", "rb") as fp:
+                group00_gradV = pickle.load(fp)
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group0_label1.txt", "rb") as fp:
+                group01_gradV = pickle.load(fp)
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group1_label0.txt", "rb") as fp:
+                group10_gradV = pickle.load(fp)
+            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group1_label1.txt", "rb") as fp:
+                group11_gradV = pickle.load(fp)
 
+            s_test_arr = []    
+            for g in range(2):
+                for l in range(2):
+                    if g == 0 and l == 0: v = group00_gradV
+                    elif g == 0 and l == 1: v = group01_gradV
+                    elif g == 1 and l == 0: v = group10_gradV
+                    elif g == 1 and l == 1: v = group11_gradV
+
+                    h_estimate = v.copy()
+
+                    params = [p for p in model.parameters() if p.requires_grad]
+
+                    for data in random_sampler:
+                        X, _, _, t, tup = data
+                        idx = tup[0]
+
+                        if torch.cuda.is_available():
+                            X, t, model, weights = X.cuda(), t.cuda(), model.cuda(), weights.cuda()
+
+                        y = model(X)
+                        loss = weights[idx] * torch.nn.CrossEntropyLoss(reduction='none')(y, t)
+                        break
+
+                    for i in tqdm(range(recursion_depth)):
+                        hv = hvp(loss[i], params, h_estimate)
+
+                        with torch.no_grad():
+                            h_estimate = [
+                                _v + (1 - damp) * _h_e - _hv / scale for _v, _h_e, _hv in zip(v, h_estimate, hv)
+                            ]
+                    
+                    s_test_arr.append(h_estimate)
+            return s_test_arr
 def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, main_option, option='fair', recursion_depth=100, damp=0.01, scale=500.0, save=True, split=False):
 
     if split == False:
@@ -327,17 +389,37 @@ def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _datas
         for i in tqdm(range(1, r)):
             cur_arr = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, main_option, option, recursion_depth, damp, scale, load_gradV=True, save=False, split=split)
             
-            for g in range(2):
-                s_test_arr[g] = [a + c for a, c in zip(s_test_arr[g], cur_arr[g])]
+            if constraint == "eopp":
+                for g in range(2):
+                    s_test_arr[g] = [a + c for a, c in zip(s_test_arr[g], cur_arr[g])]
+            elif constraint == "eo":
+                for g in range(2):
+                    for l in range(2):
+                        s_test_arr[2 * g + l] = [a + c for a, c in zip(s_test_arr[2*g + l], cur_arr[2*g + l])]
             
-        for g in range(2):
-            s_test_arr[g] = [a / r for a in s_test_arr[g]]
+        if constraint == "eopp":
+            for g in range(2):
+                s_test_arr[g] = [a / r for a in s_test_arr[g]]
+        elif constraint == "eo":
+            for g in range(2):
+                for l in range(2):
+                    s_test_arr[2*g + l] = [a / r for a in s_test_arr[2*g+l]]
         
         if save == True:
-            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "wb") as fp:
-                pickle.dump(s_test_arr[0], fp)
-            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1.txt", "wb") as fp:
-                pickle.dump(s_test_arr[1], fp)
+            if constraint == "eopp":
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "wb") as fp:
+                    pickle.dump(s_test_arr[0], fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1.txt", "wb") as fp:
+                    pickle.dump(s_test_arr[1], fp)
+            elif constraint == "eo":
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0_label0.txt", "wb") as fp:
+                    pickle.dump(s_test_arr[0], fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0_label1.txt", "wb") as fp:
+                    pickle.dump(s_test_arr[1], fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1_label0.txt", "wb") as fp:
+                    pickle.dump(s_test_arr[2], fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1_label1.txt", "wb") as fp:
+                    pickle.dump(s_test_arr[3], fp)               
             
         return s_test_arr
 
@@ -385,24 +467,52 @@ def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler,
     
     elif split == True:
         if load_s_test == True:
-            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "rb") as fp:
-                s_test_vec_group0 = pickle.load(fp)
-            with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1.txt", "rb") as fp:
-                s_test_vec_group1 = pickle.load(fp)
-            
-            for g in range(2):
-                if g == 0: s_test_vec = s_test_vec_group0
-                elif g == 1: s_test_vec = s_test_vec_group1
 
-                influences = np.zeros(len(dataloader.dataset))
-                torch.cuda.synchronize()
-                for i, data in tqdm(enumerate(dataloader)):
-                    X, _, _, t, tup = data
-                    for X_elem, t_elem, idx in zip(X, t, tup[0]):
-                        influences[idx] = calc_influence(X_elem, t_elem, s_test_vec, model, len(dataloader.dataset)).cpu()
+            if constraint == "eopp":
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "rb") as fp:
+                    s_test_vec_group0 = pickle.load(fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1.txt", "rb") as fp:
+                    s_test_vec_group1 = pickle.load(fp)
                 
-                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_influence_score_seed_{_seed}_sen_attr_{_sen_attr}_group{g}.txt", "wb") as fp:
-                    pickle.dump(influences, fp)
+                for g in range(2):
+                    if g == 0: s_test_vec = s_test_vec_group0
+                    elif g == 1: s_test_vec = s_test_vec_group1
+
+                    influences = np.zeros(len(dataloader.dataset))
+                    torch.cuda.synchronize()
+                    for i, data in tqdm(enumerate(dataloader)):
+                        X, _, _, t, tup = data
+                        for X_elem, t_elem, idx in zip(X, t, tup[0]):
+                            influences[idx] = calc_influence(X_elem, t_elem, s_test_vec, model, len(dataloader.dataset)).cpu()
+                    
+                    with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_influence_score_seed_{_seed}_sen_attr_{_sen_attr}_group{g}.txt", "wb") as fp:
+                        pickle.dump(influences, fp)
+            elif constraint == "eo":
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0_label0.txt", "rb") as fp:
+                    s_test_vec_group0_label0 = pickle.load(fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group0_label1.txt", "rb") as fp:
+                    s_test_vec_group0_label1 = pickle.load(fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1_label0.txt", "rb") as fp:
+                    s_test_vec_group1_label0 = pickle.load(fp)
+                with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_s_test_avg_seed_{_seed}_sen_attr_{_sen_attr}_group1_label1.txt", "rb") as fp:
+                    s_test_vec_group1_label1 = pickle.load(fp)
+
+                for g in range(2):
+                    for l in range(2):
+                        if g == 0 and l == 0: s_test_vec = s_test_vec_group0_label0
+                        elif g == 0 and l == 1: s_test_vec = s_test_vec_group0_label1
+                        elif g == 1 and l == 0: s_test_vec = s_test_vec_group1_label0
+                        elif g == 1 and l == 1: s_test_vec = s_test_vec_group1_label1
+
+                        influences = np.zeros(len(dataloader.dataset))
+                        torch.cuda.synchronize()
+                        for i, data in tqdm(enumerate(dataloader)):
+                            X, _, _, t, tup = data
+                            for X_elem, t_elem, idx in zip(X, t, tup[0]):
+                                influences[idx] = calc_influence(X_elem, t_elem, s_test_vec, model, len(dataloader.dataset)).cpu()
+                        
+                        with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_influence_score_seed_{_seed}_sen_attr_{_sen_attr}_group{g}_label{l}.txt", "wb") as fp:
+                            pickle.dump(influences, fp)
             
         else: raise SystemError("no load s_test")
             
