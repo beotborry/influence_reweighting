@@ -27,7 +27,7 @@ def get_args():
     parser.add_argument('--main_option', required=True, choices=['fair_only', 'fair_only_fine_tuning', 'intersect', 'intersect_fine_tuning', 'fair_with_val_loss', 'fair_only_split'])
     parser.add_argument('--log_option', required=True, choices=['all', 'last'])
     parser.add_argument('--alpha', type=float, default=1)
-
+    parser.add_argument('--batch_size', type=int, default=128)
     args = parser.parse_args()
 
     if args.seed is None:

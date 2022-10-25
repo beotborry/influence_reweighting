@@ -33,6 +33,7 @@ def main():
     option = args.main_option
     log_option = args.log_option
     alpha = args.alpha
+    batch_size = args.batch_size
 
     device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
     if torch.cuda.is_available(): torch.cuda.set_device(device)
@@ -42,7 +43,7 @@ def main():
 
     if method == 'naive':
         num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(name=dataset,
-                                                                                                    batch_size=128,
+                                                                                                    batch_size=batch_size,
                                                                                                     seed=seed,
                                                                                                     num_workers=0,
                                                                                                     target=target,
@@ -54,7 +55,7 @@ def main():
         print("{} percent".format(k))
 
         num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(name=dataset,
-                                                                                                    batch_size=128,
+                                                                                                    batch_size=batch_size,
                                                                                                     seed=seed,
                                                                                                     num_workers=0,
                                                                                                     target=target,
@@ -151,8 +152,8 @@ def main():
             )
         elif fine_tuning == 1:
             model = torch.load("./model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}".format(option, dataset, target, seed, sen_attr))
-        #optimizer = SGD(model.parameters(), lr=0.03, weight_decay=5e-4)
-        optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=1e-3)
+        optimizer = SGD(model.parameters(), lr=0.01, weight_decay=5e-4)
+        # optimizer = Adam(model.parameters(), lr=0.0005, weight_decay=1e-3)
         #scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, verbose=True)
         scheduler = StepLR(optimizer, step_size=30, gamma=0.1, verbose=True)
     criterion = nn.CrossEntropyLoss(reduction='none')
@@ -228,7 +229,7 @@ def main():
             if test_acc * 100 >= best_acc:
                 print('Test Accuracy: {:.2f}, Model Save!'.format(test_acc * 100))
                 # torch.save(model.state_dict(), './model/{}_resnet18_target_{}_seed_{}'.format(dataset, target, seed))
-                if dataset not in tabular_dataset: torch.save(model, './model/{}/{}_{}_shufflenet_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, fairness_constraint,  target, seed, sen_attr))
+                if dataset not in tabular_dataset: torch.save(model, './model/{}/{}_shufflenet_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, target, seed, sen_attr))
                 else: torch.save(model, './model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}'.format(option, dataset, target, seed, sen_attr))
 
                 best_acc = test_acc * 100

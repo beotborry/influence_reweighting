@@ -1,10 +1,15 @@
+from multiprocessing import reduction
 import torch
 from data_handler.dataloader_factory import DataloaderFactory
-from influence_function_image import avg_s_test, grad_V, calc_influence_dataset
+from influence_function_image import avg_s_test, grad_V, calc_influence_dataset, cal_fair_grad
 import pickle
 from utils import set_seed
 from torch.utils.data import DataLoader
 import argparse
+import numpy as np
+import influence_function_image
+import torch.nn as nn
+from tqdm import tqdm
 
 def get_args():
     parser = argparse.ArgumentParser(description="get influence scores for images")
@@ -19,20 +24,92 @@ def get_args():
     parser.add_argument('--main_option', required=True, choices=['fair_only', 'fair_only_fine_tuning', 'intersect', 'intersect_fine_tuning', 'fair_only_split'])
     parser.add_argument('--r', default = None, type=int)
     parser.add_argument('--t', default = None, type=int)
+    parser.add_argument('--batch_size', default=128, type=int)
 
     args = parser.parse_args()
 
     return args
 
+
+
 def get_grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, main_option, save=True, split=False):
     grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, main_option, save=save, split=split)
-
+    
+    # params = [p for p in model.parameters() if p.requires_grad]
+    # num_params = sum([np.prod(p.size()) for p in params])
+    # test = cal_fair_grad(model, params, dataloader, constraint, 2, 2, num_params)
+    
+    # print(orig)
+    # print("===========")
+    # print(test)
+    
+    # print(np.linalg.norm(orig - test))
 def get_avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, recursion_depth, option, main_option, save=True, split=False):
     avg_s_test(model=model, dataloader=dataloader, random_sampler=random_sampler, constraint=constraint, weights=weights, r=r, recursion_depth=recursion_depth, _dataset=_dataset, _seed=_seed, _sen_attr=_sen_attr, save=save, option=option, main_option=main_option, split=split)
+    
+    # orig = torch.cat([v.contiguous().view(-1) for v in orig])
+    # print(orig)
+    
+     
+    # params = [p for p in model.parameters() if p.requires_grad]
+    # hvp_fun = influence_function_image.get_Hvp_fun(nn.CrossEntropyLoss(reduction='mean'), model, params, random_sampler)
 
+    # with open("./influence_score/fair_only/adult_eopp_gradV_seed_888_sen_attr_sex.txt", "rb") as fp:
+    #     vector = pickle.load(fp)
+        
+    # flattened = torch.cat([v.contiguous().view(-1) for v in vector])
+    
+    
+    # test = influence_function_image.lissa_functorch(
+    #     matrix_fn=hvp_fun,
+    #     vector = flattened,
+    #     recursion_depth=recursion_depth,
+    #     scale = 500.0, 
+    #     damping = 0.01
+    # )
+    # for _ in tqdm(range(r - 1)):
+    #     test += influence_function_image.lissa_functorch(
+    #     matrix_fn=hvp_fun,
+    #     vector = flattened,
+    #     recursion_depth=recursion_depth,
+    #     scale = 500.0, 
+    #     damping = 0.01
+    #     )
+    # test = influence_function_image.lissa(
+    #     hvp_est_loader=random_sampler,
+    #     vector = flattened,
+    #     model = model, 
+    #     params=params,
+    #     recursion_depth=recursion_depth,
+    #     scale = 500.0, 
+    #     damping = 0.01
+    # )
+    # print("after test 1 step,",  test)
+    # for _ in tqdm(range(r - 1)):
+    #     test += influence_function_image.lissa(
+    #     hvp_est_loader=random_sampler,
+    #     vector = flattened,
+    #     model = model, 
+    #     params=params,
+    #     recursion_depth=recursion_depth,
+    #     scale = 500.0, 
+    #     damping = 0.01
+    #     )
+    # test /= r
+    
+    # with open("./influence_score/fair_only/adult_eopp_s_test_avg_test_seed_888_sen_attr_sex.txt", "wb") as fp:
+    #     pickle.dump(test, fp)
+    
+    # print(torch.linalg.norm(test - orig))
+    
 def get_influence_score(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, recursion_depth, r, option, main_option, load_s_test=True, split=False):
     influences = calc_influence_dataset(model=model, dataloader=dataloader, s_test_dataloader = s_test_dataloader, random_sampler=random_sampler, constraint=constraint, weights=weights, recursion_depth=recursion_depth, r=r, _dataset=_dataset, _seed=_seed, _sen_attr=_sen_attr, load_s_test=load_s_test, option=option, main_option = main_option, split=split)
 
+    # with open("./influence_score/fair_only/adult_eopp_s_test_avg_test_seed_888_sen_attr_sex.txt", "rb") as fp:
+    #     s_test = pickle.load(fp)
+    
+    # influences = influence_function_image.cal_is(model, dataloader, 0, s_test)
+    print(influences)
     if split == False:
         if option == 'fair':
             with open("./influence_score/{}/{}_{}_influence_score_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint, _seed, _sen_attr), "wb") as fp:
@@ -54,6 +131,7 @@ sen_attr = args.sen_attr
 
 option = args.option
 main_option = args.main_option
+batch_size = args.batch_size
 
 device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
 if torch.cuda.is_available(): torch.cuda.set_device(device)
@@ -63,9 +141,9 @@ print(device)
 split = True if "split" in args.main_option else False
 
 if dataset in ("celeba", "utkface"):
-    model = torch.load("./model/{}/{}_{}_shufflenet_target_{}_seed_{}_sen_attr_{}".format(main_option, dataset, args.constraint, target, seed, sen_attr))
+    model = torch.load("./model/{}/{}_shufflenet_target_{}_seed_{}_sen_attr_{}".format(main_option, dataset, target, seed, sen_attr))
     num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(dataset,
-                                                                                      batch_size=128, seed=seed,
+                                                                                      batch_size=batch_size, seed=seed,
                                                                                       num_workers=0,
                                                                                       target=target,
                                                                                       sen_attr=sen_attr)
@@ -74,7 +152,7 @@ if dataset in ("celeba", "utkface"):
     test_dataset = test_loader.dataset
 else:
     model = torch.load("./model/{}/{}_MLP_target_{}_seed_{}_sen_attr_{}".format(main_option, dataset, target, seed, sen_attr))
-    num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(name=dataset, batch_size=128, seed=seed, num_workers=0, target=target, influence_scores=[], sen_attr=sen_attr)
+    num_classes, num_groups, train_loader, valid_loader, test_loader = DataloaderFactory.get_dataloader(name=dataset, batch_size=batch_size, seed=seed, num_workers=0, target=target, influence_scores=[], sen_attr=sen_attr)
 
     train_dataset = train_loader.dataset
     test_dataset = test_loader.dataset
@@ -85,10 +163,13 @@ else:
 print("train dataset number: {}".format(len(train_dataset)))
 
 r = args.r
+# r = 2
 t = args.t
 
 random_sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
 train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=t, sampler=random_sampler)
+# train_sampler = torch.utils.data.DataLoader(train_dataset, batch_size=1, sampler=random_sampler)
+
 
 weights = torch.ones(len(train_dataset))
 

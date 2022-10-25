@@ -8,6 +8,47 @@ import numpy as np
 from torch.autograd.functional import hvp as hvp_torch
 
 
+def cal_fair_grad(model, params, val_dataloader, criterion, num_groups, num_classes, num_params):
+    model.eval()
+
+    grad_cache = torch.zeros((num_groups, num_classes, num_params)).cuda()
+    loss_cache = torch.zeros((num_groups, num_classes))
+    num_cache = torch.zeros((num_groups, num_classes))
+
+    for i, data in enumerate(tqdm(val_dataloader)):
+        img, _, group, label, tup = data
+        idxs = tup[0]
+        group = group.long()
+
+        img, label = img.cuda(), label.cuda()
+        output = model(img)
+        loss = nn.CrossEntropyLoss(reduction='none')(output, label)
+
+        group_element = list(torch.unique(group).numpy())
+        label_element = list(torch.unique(label.cpu()).numpy())
+
+        for g in group_element:
+            for l in label_element:
+                group_mask = (group == g)
+                label_mask = (label == l)
+
+                group_mask, label_mask = group_mask.cuda(), label_mask.cuda()
+                mask = torch.logical_and(group_mask, label_mask)
+
+                if torch.sum(mask) > 0:
+                    grad_cache[g, l] += flat_grad(torch.sum(loss[mask]), params, retain_graph=True)
+                    loss_cache[g, l] += torch.sum(loss[mask]).item()
+                    num_cache[g, l] += torch.sum(mask).item()
+
+    if criterion == 'eopp':
+        if loss_cache[0, 1] / num_cache[0, 1] > loss_cache[1, 1] / num_cache[1, 1]:
+            grads = grad_cache[0, 1] / num_cache[0, 1] - grad_cache[1, 1] / num_cache[1, 1]
+        else:
+            grads = grad_cache[1, 1] / num_cache[1, 1] - grad_cache[0, 1] / num_cache[0, 1]
+
+    return grads
+
+
 def grad_z(z, t, model, gpu=-1):
     """Calculates the gradient z. One grad_z should be computed for each
     training sample.

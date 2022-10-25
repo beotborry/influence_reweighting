@@ -7,6 +7,222 @@ import numpy as np
 from tqdm import tqdm
 import pickle
 from torch.autograd import grad
+import functorch
+from itertools import repeat
+
+def cal_is(model, train_dataloader, num_params, s_test):
+    model.eval()
+
+    fmodel, params, buffers = functorch.make_functional_with_buffers(model)
+
+    def compute_loss_stateless_model(params, buffers, sample, target):
+        batch = sample.unsqueeze(0)
+        targets = target.unsqueeze(0)
+        predictions = fmodel(params, buffers, batch)
+        if len(predictions.shape) == 1:
+            predictions = predictions.unsqueeze(0)
+        loss = nn.CrossEntropyLoss()(predictions, targets)
+        return loss
+
+    ft_compute_grad = functorch.grad(compute_loss_stateless_model)
+    ft_compute_sample_grad = functorch.vmap(ft_compute_grad, in_dims=(None, None, 0, 0))
+
+    is_cache = torch.zeros((len(train_dataloader.dataset))).cuda()
+
+
+
+    for i, data, in enumerate(tqdm(train_dataloader)):
+        img, _, _, label, tup = data
+        idxs = tup[0]
+        img, label = img.cuda(), label.cuda()
+        grads_batch = list(ft_compute_sample_grad(params, buffers, img, label))
+
+        with torch.no_grad():
+            for p_idx in range(len(grads_batch)):
+                grads_batch[p_idx] = grads_batch[p_idx].view(len(label), -1)
+
+            grads_batch = torch.hstack(grads_batch)
+
+            is_cache[idxs] = torch.einsum("ab, b -> a", grads_batch, s_test)
+    return is_cache
+
+def lissa(hvp_est_loader, vector, model, params, recursion_depth, scale = 10, damping = 0.0):
+    if not damping >= 0.0:
+        raise ValueError("damping factor should be positive")
+    
+    if not scale >= 1.0:
+        raise ValueError("Scaling factor should be larger than 1.0")
+    
+    model.eval()
+    curr_estimate = vector
+    for data in hvp_est_loader:
+        img, _, group, label, tup = data
+        # print(tup[0])
+        img, label = img.cuda(), label.cuda()
+        
+        output = model(img)
+        loss = nn.CrossEntropyLoss(reduction = 'none')(output, label)
+        break
+    
+
+    for i in range(recursion_depth):
+        grad_f = flat_grad(loss[i], params, create_graph=True)
+        vector = vector.cuda()
+        print(grad_f, curr_estimate)
+        gvp = torch.matmul(grad_f, curr_estimate.detach())
+        matrix_vector = flat_grad(gvp, params, retain_graph=True)
+        # if i == 0:
+        #     print("the very first hvp", matrix_vector)
+        curr_estimate = vector + (1 - damping) * curr_estimate - matrix_vector / scale
+        
+        # if i <= 5:
+        #     print(f"{i}, loss {loss[i]}  hvp {matrix_vector}, \n h_est {curr_estimate} \n")
+
+    # for i in range(recursion_depth):
+    #     matrix_vector = matrix_fn(curr_estimate) 
+    #     curr_estimate = vector + (1 - damping) * curr_estimate - matrix_vector / scale
+
+    return curr_estimate
+
+def lissa_functorch(matrix_fn, vector, recursion_depth, scale = 10, damping = 0.0):
+    if not damping >= 0.0:
+        raise ValueError("damping factor should be positive")
+    
+    if not scale >= 1.0:
+        raise ValueError("Scaling factor should be larger than 1.0")
+
+    curr_estimate = vector
+    for i in range(recursion_depth):
+        matrix_vector = matrix_fn(curr_estimate) 
+        curr_estimate = vector + (1 - damping) * curr_estimate - matrix_vector / scale
+
+
+    return curr_estimate 
+
+def repeater(dataloader):
+    for loader in repeat(dataloader):
+        for data in loader:
+            yield data
+
+def flatten(vecs):
+    '''
+    Return an unrolled, concatenated copy of vecs
+    Parameters
+    ----------
+    vecs : list
+        a list of Pytorch Tensor objects
+    Returns
+    -------
+    flattened : torch.FloatTensor
+        the flattened version of vecs
+    '''
+
+    flattened = torch.cat([v.contiguous().view(-1) for v in vecs])
+
+    return flattened
+
+
+def flat_grad(functional_output, inputs, retain_graph=False, create_graph=False):
+    '''
+    Return a flattened view of the gradients of functional_output w.r.t. inputs
+    Parameters
+    ----------
+    functional_output : torch.FloatTensor
+        The output of the function for which the gradient is to be calculated
+    inputs : torch.FloatTensor (with requires_grad=True)
+        the variables w.r.t. which the gradient will be computed
+    retain_graph : bool
+        whether to keep the computational graph in memory after computing the
+        gradient (not required if create_graph is True)
+    create_graph : bool
+        whether to create a computational graph of the gradient computation
+        itself
+    Return
+    ------
+    flat_grads : torch.FloatTensor
+        a flattened view of the gradients of functional_output w.r.t. inputs
+    '''
+
+    if create_graph == True:
+        retain_graph = True
+
+    grads = grad(functional_output, inputs, retain_graph=retain_graph, create_graph=create_graph)
+    flat_grads = flatten(grads)
+
+    return flat_grads
+
+def get_Hvp_fun(loss_fn, model, inputs, hvp_est_loader, damping_coef=0.0):
+    # inputs = list(inputs)
+    
+    # hvp_est_loader = repeater(hvp_est_loader)
+
+    def Hvp_fun(v, retain_graph=False):
+        for batch in hvp_est_loader:
+            imgs, _, _, labels, tup = batch
+            
+            print(tup[0])
+            
+            imgs = imgs.cuda()
+            labels = labels.cuda()
+
+            preds = model(imgs)
+            if len(preds.shape) == 1:
+                preds = preds.unsqueeze(0)
+
+            losses = loss_fn(preds, labels)
+            # losses /= len(labels)
+            break
+
+
+        grad_f = flat_grad(losses, inputs, create_graph=True)
+
+        v = v.cuda()
+        #print(grad_f.shape, v.shape)
+        gvp = torch.matmul(grad_f, v)
+        #print(gvp.shape)
+        Hvp = flat_grad(gvp, inputs, retain_graph=retain_graph)
+        Hvp += damping_coef * v
+
+        del losses
+    
+        return Hvp
+    
+    return Hvp_fun
+
+def get_HVP_fun_functorch(model, hvp_est_loader):
+    hvp_est_loader = repeater(hvp_est_loader)
+    
+    def compute_loss_stateless_model(params, sample, target, fn, buffers):
+        # batch = sample.unsqueeze(0)
+        # targets = target.unsqueeze(0)
+
+        # print(batch.shape)
+        predictions = fn(params, buffers, sample)
+        if len(predictions.shape) == 1:
+            predictions = predictions.unsqueeze(0)
+        loss = nn.CrossEntropyLoss()(predictions, target)
+        return loss
+   
+    def Hvp_fun(v):
+        fmodel, params, buffers = functorch.make_functional_with_buffers(model)
+        # params = [p.data for p in params]
+        for data in hvp_est_loader:
+            imgs, _, _, labels, _ = data
+            imgs = imgs.cuda()
+            labels = labels.cuda()
+            # v = v.cuda()
+
+            loss_fn = lambda x: compute_loss_stateless_model(x, imgs, labels, fmodel, buffers)     
+            _, vjp_fun = functorch.vjp(functorch.grad(loss_fn), params)
+            
+            break
+
+        return vjp_fun(v)[0]
+
+    return Hvp_fun
+
+    
+
 
 def grad_z(z, t, model, gpu=-1):
     if z.dim() == 1: z = torch.unsqueeze(z, 0)
@@ -23,6 +239,47 @@ def grad_z(z, t, model, gpu=-1):
 
     params = [p for p in model.parameters() if p.requires_grad]
     return list(grad(loss, params, retain_graph=True))
+
+
+def cal_fair_grad(model, params, val_dataloader, criterion, num_groups, num_classes, num_params):
+    model.eval()
+
+    grad_cache = torch.zeros((num_groups, num_classes, num_params)).cuda()
+    loss_cache = torch.zeros((num_groups, num_classes))
+    num_cache = torch.zeros((num_groups, num_classes))
+
+    for i, data in enumerate(tqdm(val_dataloader)):
+        img, _, group, label, tup = data
+        idxs = tup[0]
+        group = group.long()
+
+        img, label = img.cuda(), label.cuda()
+        output = model(img)
+        loss = nn.CrossEntropyLoss(reduction='none')(output, label)
+
+        group_element = list(torch.unique(group).numpy())
+        label_element = list(torch.unique(label.cpu()).numpy())
+
+        for g in group_element:
+            for l in label_element:
+                group_mask = (group == g)
+                label_mask = (label == l)
+
+                group_mask, label_mask = group_mask.cuda(), label_mask.cuda()
+                mask = torch.logical_and(group_mask, label_mask)
+
+                if torch.sum(mask) > 0:
+                    grad_cache[g, l] += flat_grad(torch.sum(loss[mask]), params, retain_graph=True)
+                    loss_cache[g, l] += torch.sum(loss[mask]).item()
+                    num_cache[g, l] += torch.sum(mask).item()
+
+    if criterion == 'eopp':
+        if loss_cache[0, 1] / num_cache[0, 1] > loss_cache[1, 1] / num_cache[1, 1]:
+            grads = grad_cache[0, 1] / num_cache[0, 1] - grad_cache[1, 1] / num_cache[1, 1]
+        else:
+            grads = grad_cache[1, 1] / num_cache[1, 1] - grad_cache[0, 1] / num_cache[0, 1]
+
+    return grads
 
 def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, main_option, save=False, split=False):
     params = [p for p in model.parameters() if p.requires_grad]
@@ -103,6 +360,8 @@ def grad_V(constraint, dataloader, model, _dataset, _seed, _sen_attr, main_optio
 
             with open("./influence_score/{}/{}_{}_gradV_seed_{}_sen_attr_{}.txt".format(main_option, _dataset, constraint,  _seed, _sen_attr), "wb") as fp:
                 pickle.dump(result, fp)
+                
+            return result
 
         elif save == True and split == True:
             with open(f"./influence_score/{main_option}/{_dataset}_{constraint}_gradV_seed_{_seed}_sen_attr_{_sen_attr}_group0.txt", "wb") as fp:
@@ -258,6 +517,7 @@ def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _se
         for data in random_sampler:
             X, _, _, t, tup = data
             idx = tup[0]
+            # print(idx)
 
             if torch.cuda.is_available():
                 X, t, model, weights  = X.cuda(), t.cuda(), model.cuda(), weights.cuda()
@@ -267,11 +527,14 @@ def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _se
 
         for i in tqdm(range(recursion_depth)):
             hv = hvp(loss[i], params, h_estimate)
-
+            # if i == 0:
+            #     print("the very first hvp", hv)
             with torch.no_grad():
                 h_estimate = [
                     _v + (1 - damp) * _h_e - _hv / scale
                     for _v, _h_e, _hv in zip(v, h_estimate, hv)]
+            if i <= 5:
+                print(f"{i}, \n  loss {loss[i]} \n vector {v},  \n hvp, {hv}, \n h_est {h_estimate} \n")
 
         if save == True:
             if option == 'fair':
@@ -365,10 +628,9 @@ def s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _se
                     s_test_arr.append(h_estimate)
             return s_test_arr
 def avg_s_test(model, dataloader, random_sampler, constraint, weights, r, _dataset, _seed, _sen_attr, main_option, option='fair', recursion_depth=100, damp=0.01, scale=500.0, save=True, split=False):
-
+    print(scale, damp, recursion_depth)
     if split == False:
         all = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, main_option, option, recursion_depth, damp, scale, load_gradV=True, save=False, split=split)
-
         for i in tqdm(range(1, r)):
             cur = s_test(model, dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, main_option, option, recursion_depth, damp, scale, load_gradV=True, save=False, split=split)
             all = [a + c for a, c in zip(all, cur)]
@@ -437,9 +699,12 @@ def hvp(y, w, v):
 
 def calc_influence(z, t, s_test, model, dataset_size):
     grad_z_vec = grad_z(z, t, model)
+    print(grad_z_vec)
     influence = -sum([
         torch.sum(k*j).data for k, j in zip(grad_z_vec, s_test)]) / dataset_size
-    
+
+    print(influence)
+    exit()    
     return influence
 
 def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler, constraint, weights, _dataset, _seed, _sen_attr, main_option, option='fair', recursion_depth=5000, r=1, damp=0.01, scale=25.0, load_s_test=True, split = False):
@@ -461,6 +726,7 @@ def calc_influence_dataset(model, dataloader, s_test_dataloader, random_sampler,
             X, _, _, t, tup = data
             for X_elem, t_elem, idx in zip(X, t, tup[0]):
                 #print(X_elem, idx)
+                print(idx)
                 influences[idx] = calc_influence(X_elem, t_elem, s_test_vec, model, len(dataloader.dataset)).cpu()
     
         return influences

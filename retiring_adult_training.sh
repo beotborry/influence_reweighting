@@ -1,15 +1,14 @@
 #!/bin/bash
 
-for seed in 1 2 3 4
+for seed in 123
 do 
-	python3 main_final.py --dataset retiring_adult --method naive --seed $seed --constraint eopp --epoch 50 --iteration 1 --gpu 2 --sen_attr race --fine_tuning 0 --main_option fair_only_split --log_option all
-	python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eopp --r 93 --t 10000 --gpu 2 --calc_option grad_V --target None --sen_attr race --main_option fair_only_split
-	# python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eo --r 93 --t 10000 --gpu 2 --calc_option grad_V --target None --sen_attr race --main_option fair_only
-	python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eopp --r 93 --t 10000 --gpu 2 --calc_option s_test --target None --sen_attr race --main_option fair_only_split
-	python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eopp --r 93 --t 10000 --gpu 2 --calc_option influence --target None --sen_attr race --main_option fair_only_split
-	# python3 calc_influence.py --option val_loss --dataset retiring_adult --seed $seed --constraint eo --r 93 --t 10000 --gpu 2 --calc_option s_test --target None --sen_attr race --main_option fair_only
-	# python3 calc_influence.py --option val_loss --dataset retiring_adult --seed $seed --constraint eo --r 93 --t 10000 --gpu 2 --calc_option influence --target None --sen_attr race --main_option fair_only
-
+	# python3 main_final.py --dataset retiring_adult --method naive --seed $seed --constraint eopp --epoch 30 --iteration 1 --gpu 1 --sen_attr race --fine_tuning 0 --main_option fair_only_split --log_option all --batch_size 2048
+	python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eopp --r 93 --t 10000 --gpu 1 --calc_option grad_V --target None --sen_attr race --main_option fair_only_split --batch_size 2048
+	python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eopp --r 93 --t 10000 --gpu 1 --calc_option s_test --target None --sen_attr race --main_option fair_only_split --batch_size 2048
+	python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eopp --r 93 --t 10000 --gpu 1 --calc_option influence --target None --sen_attr race --main_option fair_only_split --batch_size 2048
+	# python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eo --r 93 --t 10000 --gpu 2 --calc_option grad_V --target None --sen_attr race --main_option fair_only_split --batch_size 2048
+	# python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eo --r 93 --t 10000 --gpu 2 --calc_option s_test --target None --sen_attr race --main_option fair_only_split --batch_size 2048
+	# python3 calc_influence.py --option fair --dataset retiring_adult --seed $seed --constraint eo --r 93 --t 10000 --gpu 2 --calc_option influence --target None --sen_attr race --main_option fair_only_split --batch_size 2048
 
 	# cp "./model/fair_only/retiring_adult_MLP_target_None_seed_${seed}_sen_attr_race" "./model/fair_only_fine_tuning"
 	# cp "./model/fair_only/retiring_adult_MLP_target_None_seed_${seed}_sen_attr_race" "./model/intersect"
